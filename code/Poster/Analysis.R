@@ -1,0 +1,80 @@
+# Create dataframes of the videos by diffent topics
+# Some of the topics were created using the criteria of the policy group while other topics were determined based on the videos I collected independently
+sexual_assault <-rbind.data.frame(womenv1,womenv2,womenv3,womenv4,womenv5,womenv6,womenv7,womenv8,womenv9,womenv10)
+sexual_assault$NameofDf <- rep("sexual_assault")
+education<-rbind.data.frame(educv1,educv2,educv3,educv4,educv5)
+education$NameofDf <- rep("education")
+health <-rbind.data.frame(healthv1,healthv2,healthv3,healthv4,healthv5,datav12,datav27,datav26,datav28,datav20,datav21,datav22,datav23) 
+health$NameofDf <- rep("health")
+incentives <-rbind.data.frame(incv1,incv2,incv3,incv4,incv5)
+incentives$NameofDf <- rep("incentives")
+privacy <-rbind.data.frame(priv1,priv2,priv3)
+privacy$NameofDf <- rep("privacy")
+requirements <-rbind.data.frame(reqv1,reqv2,reqv3,reqv4,reqv5)
+requirements$NameofDf <- rep("requirements")
+retirement <-rbind.data.frame(retv1,retv2,retv3,retv4,retv5,retv6) 
+retirement$NameofDf <- rep("retirement")
+quitting <- rbind.data.frame(datav1,datav15,datav25,datav3,datav13,datav23,datav21,datav20)
+quitting$NameofDf <- rep("quitting")
+transgender <- rbind.data.frame(datav2,datav16,datav17,transv1,transv2,transv3)
+transgender$NameofDf <- rep("transgender")
+combat <- rbind.data.frame(datav3,datav4,datav6,datav7,datav10,datav23)
+combat$NameofDf <- rep("combat")
+quality_of_life <- rbind.data.frame(qolv1,qolv2,qolv3,qolv4,qolv5,datav13,datav18,datav19,datav24,datav25)
+quality_of_life$NameofDf <- rep("quality_of_life")
+alltexts <- rbind.data.frame(sexual_assault,education,health,incentives,privacy,requirements,retirement,leave,transgender,combat,quality_of_life)
+write.csv(quitting, file = "/home/magrant/sdal/projects/dod_social_media/Poster/YouTube/Output/quitting.csv")
+write.txt(alltexts, file = "/home/magrant/sdal/projects/dod_social_media/Poster/YouTube/Output/alltexts.txt")
+
+library(tm)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(tidytext)
+library(syuzhet)
+library(lubridate)
+library(ggplot2)
+library(scales)
+
+# Get sentiment of YouTube comments based on topic 
+raw_comments <- alltexts %>% group_by(NameofDf) 
+# clean comments to prepare for sentiment analysis
+clean_comments <- alltexts %>% mutate(linenumber = row_number()) 
+clean_comments$Comment <- removePunctuation(clean_comments$Comment)  
+clean_comments$Comment <- removeNumbers(clean_comments$Comment)
+clean_comments$Comment <- removeWords(clean_comments$Comment, stopwords("SMART"))
+mySentiment <- get_nrc_sentiment(clean_comments$Comment) # get sentiment for each comment
+summary(mySentiment)
+comments <- cbind(clean_comments$Comment, mySentiment) # create dataframe with comments and sentiments
+grps <- cbind(clean_comments$NameofDf,comments) # add topic column to the comments data
+grps$sentimentscore <- grps$positive - grps$negative # create a column of the sentiment score by subtracting the negative score from the positive score
+colnames(grps) <- c("topic","comment","anger","anticipation","disgust","fear","joy","sadness","surprise","trust","negative","positive","sentimentscore") # rename column of the dataset for clarity
+
+# create dataframes for each sentiment to get a stacked bar chart of the sentiments colored by the topic
+new <- grps %>% group_by(topic) 
+sum.anger <- new %>% summarise(sum(anger))
+sum.anticipation <- new %>% summarise(sum(anticipation))    
+sum.disgust <- new %>% summarise(sum(disgust))
+sum.fear <- new %>% summarise(sum(fear))
+sum.joy <- new %>% summarise(sum(joy))
+sum.sadness <- new %>% summarise(sum(sadness))
+sum.surprise <- new %>% summarise(sum(surprise))
+sum.trust <- new %>% summarise(sum(trust))
+sum.negative <- new %>% summarise(sum(negative))
+sum.positive <- new %>% summarise(sum(positive))
+d <- inner_join(sum.anger, sum.anticipation, by = "topic")
+d <- inner_join(d, sum.disgust, by = "topic")
+d <- inner_join(d, sum.fear, by = "topic")
+d <- inner_join(d, sum.joy, by = "topic")
+d <- inner_join(d, sum.sadness, by = "topic")
+d <- inner_join(d, sum.surprise, by = "topic")
+d <- inner_join(d, sum.trust, by = "topic")
+d <- inner_join(d, sum.negative, by = "topic")
+d <- inner_join(d, sum.positive, by = "topic")
+head(d)
+colnames(d) <- c("topic","anger","anticipation","disgust","fear","joy","sadness","surprise","trust","negative","positive")
+sentiment.data <- d %>% gather(sentiment, score, anger:positive)  
+head(sentiment.data)  
+ggplot(sentiment.data[which(sentiment.data$topic %in% c("education","health","quality_of_life","sexual_assault","transgender")),], aes(x= sentiment, y=score, fill = topic)) + geom_bar(stat = "identity") + scale_fill_manual('topic', values = c("#A50026","#74ADD1","#F46D43","#FEE090","seagreen"))
+
+
