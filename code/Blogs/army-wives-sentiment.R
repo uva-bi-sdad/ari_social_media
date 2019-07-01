@@ -8,12 +8,16 @@
 #install.packages("tidytext")
 #install.packages("tm")
 #install.packages("qdap")
+#install.packages("wordcloud") # word-cloud generator 
+#install.packages("RColorBrewer") # color palettes
 
 library(jsonlite)
 library(tidyverse)
 library(tidytext)
 library(tm)
 library(qdap)
+library(wordcloud)
+library(RColorBrewer)
 
 setwd("~/ari_social_media/data/working/Blogs")
 #read in data, remove all carriage returns from the "entry" column (body of blog text)
@@ -34,3 +38,13 @@ entries <- entries %>%
 #give us a count of the top 50 words, removing contractions that aren't included in stop_words
 top50_words <- freq_terms(entries, 50, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
 top50_words
+
+#count of top 100 words
+top100_words <- freq_terms(entries, 100, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
+top100_words
+
+#create word cloud
+set.seed(1234)
+wordcloud(words = top200_words$WORD, freq = top200_words$FREQ, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "RdYlBu"))
