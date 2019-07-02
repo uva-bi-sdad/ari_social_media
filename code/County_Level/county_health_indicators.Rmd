@@ -9,7 +9,7 @@ library(readxl)
 library(tidyverse)
 ```
 
-## ACS Data
+## Virginia ACS Data
 
 Explanation of factors:
 
@@ -118,7 +118,7 @@ ACS <- ACS_demographic %>%
 ```
 
 
-## County Health Rankings Data
+## Virginia County Health Rankings Data
 
 Explanation of factors:
 fips = FIPS code
@@ -175,5 +175,36 @@ names(county_health_additional_measure_data) <- c("fips", "state", "county", "ch
 county_health_rankings <- county_health_ranked_measure_data %>%
   right_join(county_health_additional_measure_data, by=c("fips","state", "county"))
 
+```
+
+
+## Virginia Library Data
+
+Explanation of factors:
+county = county in which the headquarters of the administrative entity is physically located
+lib_lsa_population = Population of the Legal Service Area
+lib_hours_open = Total annual public service hours for all service outlets
+lib_circulation = total annual circulation transactions
+lib_kids_circulation = Total annual circulation (including renewals) of all children's materials in all formats to all users
+lib_program = total library programs
+lib_kids_program = total children's programs
+lib_ya_program = total young adult programs
+lib_prog_atten = total audience at all libraru programs
+lib_kids_prog_atten = total audience at all children's programs
+lib_ya_prog_atten = total audience at all young adult programs
+
+```{r}
+va_library_data <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/va_library_data.csv") %>%
+  filter(STABR == "VA") %>%
+  select("STABR", "CNTY", "POPU_LSA", "HRS_OPEN", "VISITS", "REGBOR", "TOTCIR", "KIDCIRCL", "TOTPRO", "KIDPRO", "YAPRO", "TOTATTEN", "KIDATTEN", "YAATTEN")
+
+names(va_library_data) <- c("state", "county", "lib_lsa_population", "lib_hours_open", "lib_yearly_visits", "lib_registered_users", "lib_circulation", "lib_kids_circulation", "lib_program", "lib_kids_program", "lib_ya_program", "lib_prog_atten", "lib_kids_prog_atten", "lib_ya_prog_atten")
+
+
+ok_library_data <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/va_library_data.csv") %>%
+  filter(STABR == "OK") %>%
+  select("STABR", "CNTY", "POPU_LSA", "HRS_OPEN", "VISITS", "REGBOR", "TOTCIR", "KIDCIRCL", "TOTPRO", "KIDPRO", "YAPRO", "TOTATTEN", "KIDATTEN", "YAATTEN")
+
+names(ok_library_data) <- c("state", "county", "lib_lsa_population", "lib_hours_open", "lib_yearly_visits", "lib_registered_users", "lib_circulation", "lib_kids_circulation", "lib_program", "lib_kids_program", "lib_ya_program", "lib_prog_atten", "lib_kids_prog_atten", "lib_ya_prog_atten")
 ```
 
