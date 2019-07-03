@@ -111,7 +111,8 @@ names(ACS_demographic) <- c("geo_id", "fips", "county", "state", "population", "
 ACS <- ACS_demographic %>%
   right_join(ACS_economic, by=c("geo_id","fips", "county", "state"))%>%
   right_join(ACS_housing, by=c("geo_id","fips", "county", "state"))%>%
-  right_join(ACS_social, by=c("geo_id","fips", "county", "state"))
+  right_join(ACS_social, by=c("geo_id","fips", "county", "state"))%>%
+  mutate(county = tools::toTitleCase(as.character(county)))
 
 va_ACS <- ACS %>%
   filter(state == "Virginia")
@@ -154,13 +155,12 @@ write.csv(first_row,'first_row.csv')
 header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
 header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
 
-county_health_ranked_measure_data <- read.csv("first_row.csv", header = FALSE, skip=2, col.names=header) %>% 
+county_health_ranked_measure_data <- read.csv("first_row.csv", header = FALSE, skip=3, col.names=header) %>% 
   select("X__1_FIPS", "X__2_State", "X__3_County","Poor.or.fair.health_..Fair.Poor", "X__45_Teen.Birth.Rate", "X__54_PCP.Ratio", "X__62_Preventable.Hosp..Rate",
          "X__88_..Unemployed", "Children.in.poverty_..Children.in.Poverty", "X__97_Income.Ratio", "X__104_Association.Rate", "Air.pollution...particulate.matter_Average.Daily.PM2.5",
          "Drinking.water.violations_Presence.of.violation", "X__114_..Severe.Housing.Problems", "X__124_..Long.Commute...Drives.Alone")
 
-names(county_health_ranked_measure_data) <- c("fips", "state", "county", "pct_fair_poor_health", "teen_birth_rate", "pcp_ratio", "preventable_hosp_rate", "pct_unemployed",
-                            "pct_children_poverty", "income_ratio", "assoc_rate", "air_pollution", "water_violations", "severe_housing_problems", "drive_along_long_commute")
+names(county_health_ranked_measure_data) <- c("fips", "state", "county", "pct_fair_poor_health", "teen_birth_rate", "pcp_ratio", "preventable_hosp_rate", "pct_unemployed", "pct_children_poverty", "income_ratio", "assoc_rate", "air_pollution", "water_violations", "severe_housing_problems", "drive_along_long_commute")
 
 
 
@@ -170,13 +170,16 @@ write.csv(first_row,'first_row.csv')
 header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
 header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
 
-county_health_additional_measure_data <- read.csv("first_row.csv", header = FALSE, skip=2, col.names=header) %>% 
+county_health_additional_measure_data <- read.csv("first_row.csv", header = FALSE, skip=3, col.names=header) %>% 
   select("X__1_FIPS", "X__2_State", "X__3_County","X__7_Child.Mortality.Rate", "X__10_Infant.Mortality.Rate", "X__20_..Food.Insecure", "X__37_Household.Income..white.alone.", "X__38_Household.Income..black.alone.", "X__39_Household.income..Hispanic.", "Residential.segregation...black.white_Segregation.index", "Residential.segregation...non.white.white_Segregation.Index", "X__65_..Rural")
 
 names(county_health_additional_measure_data) <- c("fips", "state", "county", "child_mortality_rate", "infant_mortality_rate", "pct_food_insecure", "median_income_white", "median_income_black", "median_income_hispanic", "segregation_black_white", "segregation_white_non", "pct_rural")
 
 va_county_health_rankings <- county_health_ranked_measure_data %>%
-  right_join(county_health_additional_measure_data, by=c("fips","state", "county"))
+  right_join(county_health_additional_measure_data, by=c("fips","state", "county"))%>%
+  mutate(county = ifelse(county == "Charles City", "Charles City County",
+                          ifelse(county == "James City", "James City County",
+                                  ifelse(grepl("City", county), as.character(county), paste(as.character(county),"County", sep = " ")))))
 
 
 
@@ -187,7 +190,7 @@ write.csv(first_row,'first_row.csv')
 header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
 header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
 
-county_health_ranked_measure_data <- read.csv("first_row.csv", header = FALSE, skip=2, col.names=header) %>% 
+county_health_ranked_measure_data <- read.csv("first_row.csv", header = FALSE, skip=3, col.names=header) %>% 
   select("X__1_FIPS", "X__2_State", "X__3_County","Poor.or.fair.health_..Fair.Poor", "X__45_Teen.Birth.Rate", "X__54_PCP.Ratio", "X__62_Preventable.Hosp..Rate",
          "X__88_..Unemployed", "Children.in.poverty_..Children.in.Poverty", "X__97_Income.Ratio", "X__104_Association.Rate", "Air.pollution...particulate.matter_Average.Daily.PM2.5",
          "Drinking.water.violations_Presence.of.violation", "X__114_..Severe.Housing.Problems", "X__124_..Long.Commute...Drives.Alone")
@@ -203,16 +206,19 @@ write.csv(first_row,'first_row.csv')
 header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
 header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
 
-county_health_additional_measure_data <- read.csv("first_row.csv", header = FALSE, skip=2, col.names=header) %>% 
+county_health_additional_measure_data <- read.csv("first_row.csv", header = FALSE, skip=3, col.names=header) %>% 
   select("X__1_FIPS", "X__2_State", "X__3_County","X__7_Child.Mortality.Rate", "X__10_Infant.Mortality.Rate", "X__20_..Food.Insecure", "X__37_Household.Income..white.alone.", "X__38_Household.Income..black.alone.", "X__39_Household.income..Hispanic.", "Residential.segregation...black.white_Segregation.index", "Residential.segregation...non.white.white_Segregation.Index", "X__65_..Rural")
 
 names(county_health_additional_measure_data) <- c("fips", "state", "county", "child_mortality_rate", "infant_mortality_rate", "pct_food_insecure", "median_income_white", "median_income_black", "median_income_hispanic", "segregation_black_white", "segregation_white_non", "pct_rural")
 
 ok_county_health_rankings <- county_health_ranked_measure_data %>%
-  right_join(county_health_additional_measure_data, by=c("fips","state", "county"))
+  right_join(county_health_additional_measure_data, by=c("fips","state", "county"))%>%
+  mutate(county = ifelse(county == "Charles City", "Charles City County",
+                          ifelse(county == "James City", "James City County",
+                                  ifelse(grepl("City", county), as.character(county), paste(as.character(county),"County", sep = " ")))))
 
 
-rm(county_health_additional_measure_data, county_health_ranked_measure_data, first_row)
+rm(county_health_additional_measure_data, county_health_ranked_measure_data, first_row, header)
 
 ```
 
@@ -228,7 +234,7 @@ lib_kids_circulation = Total annual circulation (including renewals) of all chil
 lib_program = total library programs
 lib_kids_program = total children's programs
 lib_ya_program = total young adult programs
-lib_prog_atten = total audience at all libraru programs
+lib_prog_atten = total audience at all library programs
 lib_kids_prog_atten = total audience at all children's programs
 lib_ya_prog_atten = total audience at all young adult programs
 
@@ -239,11 +245,84 @@ library_data <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level
 names(library_data) <- c("state_abr", "county", "lib_lsa_population", "lib_hours_open", "lib_yearly_visits", "lib_registered_users", "lib_circulation", "lib_kids_circulation", "lib_program", "lib_kids_program", "lib_ya_program", "lib_prog_atten", "lib_kids_prog_atten", "lib_ya_prog_atten")
 
 va_library <- library_data %>%
-  filter(state_abr == "VA")
+  filter(state_abr == "VA")%>%
+  mutate(county = tolower(as.character(county)))%>%
+  mutate(county = tools::toTitleCase(as.character(county)))
 
 ok_library <- library_data %>%
-  filter(state_abr == "OK")
+  filter(state_abr == "OK")%>%
+  mutate(county = tolower(as.character(county)))%>%
+  mutate(county = tools::toTitleCase(as.character(county)))
 
 rm(library_data)
 ```
 
+
+```{r}
+
+first_row <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/county-to-county-2012-2016-previous-residence-sort.xlsx", sheet = "Virginia", skip = 1)
+write.csv(first_row,'first_row.csv')
+
+header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
+header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
+
+va_migration <- read.csv("first_row.csv", header = FALSE, skip=3, col.names=header) %>%
+  select("State.U.S..Island.Area.Foreign.Region.of.Residence.1.Year.Ago_NA", "County.of.Residence.1.Year.Ago_NA", "County.of.Residence.1.Year.Ago__1_Population.1.Year.and.Over", "X__15_Nonmovers", "X__17_Movers.within.United.States", "X__19_Movers.within.Same.County", "X__21_Movers.to.Different.County..Same.State", "X__23_Movers.to.Different.State", "X__25_Movers.to.Puerto.Rico") %>%
+  mutate(County.of.Residence.1.Year.Ago_NA = tools::toTitleCase(as.character(County.of.Residence.1.Year.Ago_NA)))
+
+names(va_migration) <- c("state", "county", "population", "nonmovers", "movers_within_us", "movers_within_county", "movers_within_state_dif_county", "movers_dif_state", "movers_puerto_rico")
+
+#remove duplicate rows
+va_migration <- unique(va_migration)
+#remove row of all NAs
+va_migration <- va_migration[!(rowSums(is.na(va_migration))==NCOL(va_migration)),]
+
+va_migration <- va_migration %>%
+  mutate(pct_stayed = (nonmovers+movers_within_county)/population)
+
+
+
+first_row <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/county-to-county-2012-2016-previous-residence-sort.xlsx", sheet = "Oklahoma", skip = 1)
+write.csv(first_row,'first_row.csv')
+
+header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
+header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
+
+ok_migration <- read.csv("first_row.csv", header = FALSE, skip=3, col.names=header) %>%
+  select("State.U.S..Island.Area.Foreign.Region.of.Residence.1.Year.Ago_NA", "County.of.Residence.1.Year.Ago_NA", "County.of.Residence.1.Year.Ago__1_Population.1.Year.and.Over", "X__15_Nonmovers", "X__17_Movers.within.United.States", "X__19_Movers.within.Same.County", "X__21_Movers.to.Different.County..Same.State", "X__23_Movers.to.Different.State", "X__25_Movers.to.Puerto.Rico")%>%
+  mutate(County.of.Residence.1.Year.Ago_NA = tools::toTitleCase(as.character(County.of.Residence.1.Year.Ago_NA)))
+
+names(ok_migration) <- c("state", "county", "population", "nonmovers", "movers_within_us", "movers_within_county", "movers_within_state_dif_county", "movers_dif_state", "movers_puerto_rico")
+
+#remove duplicate rows
+ok_migration <- unique(ok_migration)
+#remove row of all NAs
+ok_migration <- ok_migration[!(rowSums(is.na(ok_migration))==NCOL(ok_migration)),]
+
+rm(first_row, header)
+```
+
+###looking at relationship between health rankings and migration data
+```{r}
+first_row <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/2017_County_Health_Rankings_Virginia_Data-v2.xls", sheet = 2)
+write.csv(first_row,'first_row.csv')
+
+header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
+header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
+
+county_health <- read.csv("first_row.csv", header = FALSE, skip=3, col.names=header)%>%
+  mutate(county = ifelse(X__3_County == "Charles City", "Charles City County",
+                          ifelse(X__3_County == "James City", "James City County",
+                                  ifelse(grepl("City", X__3_County), as.character(X__3_County), paste(as.character(X__3_County),"County", sep = " ")))))%>%
+  mutate(state = X__2_State)
+
+
+migration_county_rankings <- county_health %>%
+  right_join(va_migration, by=c("county", "state"))
+
+summary(lm(pct_stayed~X__4_Rank, data = migration_county_rankings))
+mod<- lm(pct_stayed~X__4_Rank, data = migration_county_rankings)
+plot(mod, which=c(1,2))
+
+rm(county_health, first_row, migration_county_rankings, header, mod)
+```
