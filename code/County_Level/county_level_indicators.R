@@ -13,7 +13,6 @@ names(ACS_social) <- c("geo_id", "geo_id2", "geo_label", "number_enrolled", "num
                        "pct_bachelors", "pct_grad_degree", "pct_hs_or_higher", "pct_college_or_higher")
 
 
-
 #Read in American Community Survey Housing Characteristics for 2017 dataset
 ACS_housing_import <- read_csv("data/working/County_Level/ACS_17_Housing_with_ann.csv")
 ACS_housing <- ACS_housing_import[-c(1),] %>%
@@ -36,7 +35,6 @@ names(ACS_economic) <- c("geo_id", "geo_id2", "geo_label", "pct_unemployed", "pc
                          "pct_impoverished")
 
 
-
 #Read in American Community Survey Demographic and Housing Characteristics for 2017 dataset
 ACS_demographic_import <- read_csv("data/working/County_Level/ACS_17_Demographic_Housing_with_ann.csv")
 ACS_demographic <- ACS_demographic_import[-c(1),] %>%
@@ -46,10 +44,29 @@ ACS_demographic <- ACS_demographic_import[-c(1),] %>%
 names(ACS_demographic) <- c("geo_id", "geo_id2", "geo_label", "population", "pop_under_5", "pop_5_9", "pop_10_14", "pop_15_19", "pop_20_24", "pct_white",
                             "pct_black", "pct_native", "pct_asian", "pct_pacific_islander", "pct_race_other", "pct_hispanic_latinx")
 
-#, ACS_economic, ACS_housing, ACS_social, 
+
+#merge all seperate ACS datasets with factors we want 
 ACS <- ACS_demographic %>%
   right_join(ACS_economic, by=c("geo_id","geo_id2", "geo_label"))%>%
   right_join(ACS_housing, by=c("geo_id","geo_id2", "geo_label"))%>%
   right_join(ACS_social, by=c("geo_id","geo_id2", "geo_label"))
   
+
+
+
+
+
+first_row <- read_excel("data/working/County_Level/2017_County_Health_Rankings_Virginia_Data-v2.xls", sheet = 4)
+write.csv(first_row,'first_row.csv')
+
+header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
+header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
+
+county_health_ranked_measure_data <- read.csv("first_row.csv", header = FALSE, skip=2, col.names=header) %>% 
+  select("X__1_FIPS", "X__2_State", "X__3_County","Poor.or.fair.health_..Fair.Poor", "X__45_Teen.Birth.Rate", "X__54_PCP.Ratio", "X__62_Preventable.Hosp..Rate",
+         "X__88_..Unemployed", "Children.in.poverty_..Children.in.Poverty", "X__97_Income.Ratio", "X__104_Association.Rate", "Air.pollution...particulate.matter_Average.Daily.PM2.5",
+         "Drinking.water.violations_Presence.of.violation", "X__114_..Severe.Housing.Problems", "X__124_..Long.Commute...Drives.Alone")
+
+names(county_health_ranked_measure_data) <- c("fips", "state", "county", "pct_fair_poor_health", "teen_birth_rate", "pcp_ratio", "preventable_hosp_rate", "pct_unemployed",
+                            "pct_children_poverty", "income_ratio", "assoc_rate", "air_pollution", "water_violations", "severe_housing_problems", "drive_along_long_commute")
 

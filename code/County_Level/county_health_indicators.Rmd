@@ -1,0 +1,249 @@
+---
+title: "county_level_indicators"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(readxl)
+library(tidyverse)
+```
+
+## Virginia ACS Data
+
+Explanation of factors:
+
+fips = FIPS Code
+number_enrolled = population 3 years and over enrolled in school
+number_enrolled_prek = population >3 y.o. enrolled in nursery school/preschool
+number_enrolled_k = population enrolled in kindergarten
+number_enrolled_elementary = population enrolled in grades 1-8
+number_enrolled_hs = population enrolled in grades 9-12
+number_enrolled_college = population enrolled in college or graduate school
+pct_under_9th = percent of adults 25 and older with less than 9th grade education
+pct_9th_12th = percent of adults >=25 with 9th-12th grade education, no diploma
+pct_attained_hs = percent of adults with a high school diploma or equivalent, no higher
+pct_some_college = percent of adults with some college education, no degree
+pct_associates = precent of adults with associates degree, no higher
+pct_bachelors = percent of adults with a bachelor's degree, no higher
+pct_grad_degree = percent of adults with a graduate or professional degree
+pct_hs_or_higher = percent of adults that are a high school graduate or higher
+pct_college_or_higher = percent of adults with a bachelor's degree or higher
+
+pct_owner_occupied_homes = percent of total housing units that are owner-occupied
+pct_renter_occupied_homes = percent of total housing unites that are renter-occupied
+pct_moved_after_2014 = percent of occupied housing units w residents who moved in 2015 or later
+pct_moved_2010_2014 = percent with residents who moved in beween 2010 and 2014
+pct_moved_2000_2009 = percent with residents who moved in beween 2000 and 2009
+pct_moved_1990_1999 = percent with residents who moved in beween 1990 and 1999
+pct_moved_1980_1989 = percent with residents who moved in beween 1980 and 1989
+pct_moved_1979_earlier = percent with residents who moved in 1979 or earlier
+
+pct_unemployed = unemployment rate
+pct_commute_drive = percent of workers 16 and over who drive to work alone in a car, truck, or van
+pct_commute_carpool = percent of workers who carpool to work
+pct_commute_public = percent of workers who take public transportation (excluding taxi)
+pct_commute_walk = percent of workers who walk
+pct_commute_other = percent of workers who commute via other means
+pct_work_home = percent of workers who work at home (commute is NA)
+median_income = median household income
+pct_health_ins = percent of civilian noninstitutionalized population with health insurance coverage
+pct_private_health_ins = percent of civilian noninstitutionalized population with private health insurance
+pct_public_health_ins = percent of civilian noninstitutionalized population with public health insurance
+pct_no_health_ins = percent of civilian noninstitutionalized population without health insurance coverage
+pct_impoverished = percent of families and individuals whose income in the past 12 months is below the poverty level
+
+pop_under_5 = population under 5 years old
+pop_5_9 = population between 5 and 9 years old
+pop_10_14 = population 10 to 14 years old
+pop_15_19 = population 15-19 years old
+pop_20_24 = population 20-24 years old
+pct_white = percent of total population white (either alone or in combination with other races)
+pct_black = percent of total population black or african american
+pct_native = percent "american indian" or alaska native
+pct_asian = percent asian
+pct_pacific_islander = percent native hawaiian or other pacific islander
+pct_race_other = percent some other race
+pct_hispanic_latinx = percent of total population hispanic or latinx
+
+```{r ACS Data}
+#Read in American Community Survey Social Characteristics for 2017 dataset
+ACS_social <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/ACS_OK_VA_Social.csv")[-c(1),]%>%
+  mutate(county = str_extract(`GEO.display-label`, ".+?(?=, )"),
+         state = str_extract(`GEO.display-label`, "[^, ]+$")) %>%
+  select(GEO.id, GEO.id2, county, state, HC01_VC76, HC01_VC77, HC01_VC78, HC01_VC79, HC01_VC80, HC01_VC81, HC03_VC86, HC03_VC87, HC03_VC88, HC03_VC89, HC03_VC90, 
+         HC03_VC91, HC03_VC92, HC03_VC95, HC03_VC96)
+
+names(ACS_social) <- c("geo_id", "fips", "county", "state", "number_enrolled", "number_enrolled_prek", "number_enrolled_k", "number_enrolled_elementary", "number_enrolled_hs", "number_enrolled_college", "pct_under_9th", "pct_9th_12th", "pct_attained_hs", "pct_some_college", "pct_associates", "pct_bachelors", "pct_grad_degree", "pct_hs_or_higher", "pct_college_or_higher") 
+
+
+#Read in American Community Survey Housing Characteristics for 2017 dataset
+ACS_housing <-read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/ACS_OK_VA_Housing.csv")[-c(1),] %>%
+  mutate(county = str_extract(`GEO.display-label`, ".+?(?=, )"),
+         state = str_extract(`GEO.display-label`, "[^, ]+$")) %>%
+  select(GEO.id, GEO.id2, county, state, HC03_VC65, HC03_VC66, HC03_VC75, HC03_VC76, HC03_VC77, HC03_VC78, HC03_VC79, HC03_VC80)
+
+names(ACS_housing) <- c("geo_id", "fips", "county", "state", "pct_owner_occupied_homes", "pct_renter_occupied_homes", "pct_moved_after_2014", "pct_moved_2010_2014", "pct_moved_2000_2009", "pct_moved_1990_1999", "pct_moved_1980_1989", "pct_moved_1979_earlier")
+
+
+#Read in American Community Survey Economic Characteristics for 2017 dataset
+ACS_economic <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/ACS_OK_VA_Economic.csv")[-c(1),] %>%
+  mutate(county = str_extract(`GEO.display-label`, ".+?(?=, )"),
+         state = str_extract(`GEO.display-label`, "[^, ]+$")) %>%
+  select(GEO.id, GEO.id2, county, state, HC03_VC12, HC03_VC28, HC03_VC29, HC03_VC30, HC03_VC31, HC03_VC32, HC03_VC33, HC01_VC36, HC03_VC75, HC03_VC76, 
+         HC03_VC77, HC03_VC78, HC03_VC79, HC03_VC80, HC03_VC81, HC03_VC82, HC03_VC83, HC03_VC84, HC01_VC85, HC03_VC131, HC03_VC132, HC03_VC133, HC03_VC134, HC03_VC161)
+
+names(ACS_economic) <- c("geo_id", "fips", "county", "state", "pct_unemployed", "pct_commute_drive", "pct_commute_carpool", "pct_commute_public", "pct_commute_walk", "pct_commute_other", "pct_work_home", "commute_time_mean", "pct_income_under_10k", "pct_income_10k_15k", "pct_income_15k_25k", "pct_income_25k_35k", "pct_income_35k_50k", "pct_income_50k_75k", "pct_income_75k_100k", "pct_income_100k_150k", "pct_income_150k_200k", "pct_income_over_200k", "median_income", "pct_health_ins", "pct_private_health_ins", "pct_public_health_ins", "pct_no_health_ins", "pct_impoverished")
+
+
+#Read in American Community Survey Demographic and Housing Characteristics for 2017 dataset
+ACS_demographic <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/ACS_OK_VA_Demographic.csv")[-c(1),] %>%
+  mutate(county = str_extract(`GEO.display-label`, ".+?(?=, )"),
+         state = str_extract(`GEO.display-label`, "[^, ]+$")) %>%
+  select(GEO.id, GEO.id2, county, state, HC01_VC03, HC01_VC09, HC01_VC10, HC01_VC11, HC01_VC12, HC01_VC13, HC03_VC83, HC03_VC84, HC03_VC85, HC03_VC86,
+         HC03_VC87, HC03_VC88, HC03_VC93)
+
+names(ACS_demographic) <- c("geo_id", "fips", "county", "state", "population", "pop_under_5", "pop_5_9", "pop_10_14", "pop_15_19", "pop_20_24", "pct_white",
+                            "pct_black", "pct_native", "pct_asian", "pct_pacific_islander", "pct_race_other", "pct_hispanic_latinx")
+
+
+#merge all seperate ACS datasets with factors we want 
+ACS <- ACS_demographic %>%
+  right_join(ACS_economic, by=c("geo_id","fips", "county", "state"))%>%
+  right_join(ACS_housing, by=c("geo_id","fips", "county", "state"))%>%
+  right_join(ACS_social, by=c("geo_id","fips", "county", "state"))
+
+va_ACS <- ACS %>%
+  filter(state == "Virginia")
+
+ok_ACS <- ACS %>%
+  filter(state == "Oklahoma")
+
+rm(ACS, ACS_demographic, ACS_economic, ACS_housing, ACS_social)
+
+```
+
+
+## Virginia County Health Rankings Data
+
+Explanation of factors:
+fips = FIPS code
+pct_fair_poor_health = percent of adults that report fair or poor health
+teen_birth_rate = teen births/females ages 15-19 * 100,000
+pcp_ratio = ratio of primary care physicians to population
+pct_children_poverty = percent of children (under 18) living in poverty
+income_ratio = ratio of household income at the 80th percentile to income at the 20th percentile
+accos_rate = social associations / population * 100,000
+air_pollution = average daily PM2.5 (particulate matter)
+water_violations = county affected by drinking water violation
+severe_housing_problems = percentage of households with at least 1 of 4 housing problems: overcrowding, high housing costs, or lack of kitchen or plumbing facilities
+
+pct_food_insecure = percent of population food insecure
+median_income_white = median income of white households
+median_income_black = median income of black households
+median_income_hispanic = median income of hispanic households
+segregation_black_white = index of residential segregation black/white
+segregation_white_non = index of residential segregation non-white/white
+pct_rural = percent of population in rural areas
+
+
+```{r County Health}
+first_row <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/2017_County_Health_Rankings_Virginia_Data-v2.xls", sheet = 4)
+write.csv(first_row,'first_row.csv')
+
+header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
+header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
+
+county_health_ranked_measure_data <- read.csv("first_row.csv", header = FALSE, skip=2, col.names=header) %>% 
+  select("X__1_FIPS", "X__2_State", "X__3_County","Poor.or.fair.health_..Fair.Poor", "X__45_Teen.Birth.Rate", "X__54_PCP.Ratio", "X__62_Preventable.Hosp..Rate",
+         "X__88_..Unemployed", "Children.in.poverty_..Children.in.Poverty", "X__97_Income.Ratio", "X__104_Association.Rate", "Air.pollution...particulate.matter_Average.Daily.PM2.5",
+         "Drinking.water.violations_Presence.of.violation", "X__114_..Severe.Housing.Problems", "X__124_..Long.Commute...Drives.Alone")
+
+names(county_health_ranked_measure_data) <- c("fips", "state", "county", "pct_fair_poor_health", "teen_birth_rate", "pcp_ratio", "preventable_hosp_rate", "pct_unemployed",
+                            "pct_children_poverty", "income_ratio", "assoc_rate", "air_pollution", "water_violations", "severe_housing_problems", "drive_along_long_commute")
+
+
+
+first_row <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/2017_County_Health_Rankings_Virginia_Data-v2.xls", sheet = 5)
+write.csv(first_row,'first_row.csv')
+
+header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
+header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
+
+county_health_additional_measure_data <- read.csv("first_row.csv", header = FALSE, skip=2, col.names=header) %>% 
+  select("X__1_FIPS", "X__2_State", "X__3_County","X__7_Child.Mortality.Rate", "X__10_Infant.Mortality.Rate", "X__20_..Food.Insecure", "X__37_Household.Income..white.alone.", "X__38_Household.Income..black.alone.", "X__39_Household.income..Hispanic.", "Residential.segregation...black.white_Segregation.index", "Residential.segregation...non.white.white_Segregation.Index", "X__65_..Rural")
+
+names(county_health_additional_measure_data) <- c("fips", "state", "county", "child_mortality_rate", "infant_mortality_rate", "pct_food_insecure", "median_income_white", "median_income_black", "median_income_hispanic", "segregation_black_white", "segregation_white_non", "pct_rural")
+
+va_county_health_rankings <- county_health_ranked_measure_data %>%
+  right_join(county_health_additional_measure_data, by=c("fips","state", "county"))
+
+
+
+
+first_row <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/2017_County_Health_Rankings_Oklahoma_Data-v2.xls", sheet = 4)
+write.csv(first_row,'first_row.csv')
+
+header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
+header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
+
+county_health_ranked_measure_data <- read.csv("first_row.csv", header = FALSE, skip=2, col.names=header) %>% 
+  select("X__1_FIPS", "X__2_State", "X__3_County","Poor.or.fair.health_..Fair.Poor", "X__45_Teen.Birth.Rate", "X__54_PCP.Ratio", "X__62_Preventable.Hosp..Rate",
+         "X__88_..Unemployed", "Children.in.poverty_..Children.in.Poverty", "X__97_Income.Ratio", "X__104_Association.Rate", "Air.pollution...particulate.matter_Average.Daily.PM2.5",
+         "Drinking.water.violations_Presence.of.violation", "X__114_..Severe.Housing.Problems", "X__124_..Long.Commute...Drives.Alone")
+
+names(county_health_ranked_measure_data) <- c("fips", "state", "county", "pct_fair_poor_health", "teen_birth_rate", "pcp_ratio", "preventable_hosp_rate", "pct_unemployed",
+                            "pct_children_poverty", "income_ratio", "assoc_rate", "air_pollution", "water_violations", "severe_housing_problems", "drive_along_long_commute")
+
+
+
+first_row <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/2017_County_Health_Rankings_Oklahoma_Data-v2.xls", sheet = 5)
+write.csv(first_row,'first_row.csv')
+
+header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
+header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
+
+county_health_additional_measure_data <- read.csv("first_row.csv", header = FALSE, skip=2, col.names=header) %>% 
+  select("X__1_FIPS", "X__2_State", "X__3_County","X__7_Child.Mortality.Rate", "X__10_Infant.Mortality.Rate", "X__20_..Food.Insecure", "X__37_Household.Income..white.alone.", "X__38_Household.Income..black.alone.", "X__39_Household.income..Hispanic.", "Residential.segregation...black.white_Segregation.index", "Residential.segregation...non.white.white_Segregation.Index", "X__65_..Rural")
+
+names(county_health_additional_measure_data) <- c("fips", "state", "county", "child_mortality_rate", "infant_mortality_rate", "pct_food_insecure", "median_income_white", "median_income_black", "median_income_hispanic", "segregation_black_white", "segregation_white_non", "pct_rural")
+
+ok_county_health_rankings <- county_health_ranked_measure_data %>%
+  right_join(county_health_additional_measure_data, by=c("fips","state", "county"))
+
+
+rm(county_health_additional_measure_data, county_health_ranked_measure_data, first_row)
+
+```
+
+
+## Virginia Library Data
+
+Explanation of factors:
+county = county in which the headquarters of the administrative entity is physically located
+lib_lsa_population = Population of the Legal Service Area
+lib_hours_open = Total annual public service hours for all service outlets
+lib_circulation = total annual circulation transactions
+lib_kids_circulation = Total annual circulation (including renewals) of all children's materials in all formats to all users
+lib_program = total library programs
+lib_kids_program = total children's programs
+lib_ya_program = total young adult programs
+lib_prog_atten = total audience at all libraru programs
+lib_kids_prog_atten = total audience at all children's programs
+lib_ya_prog_atten = total audience at all young adult programs
+
+```{r}
+library_data <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/va_library_data.csv") %>%
+  select("STABR", "CNTY", "POPU_LSA", "HRS_OPEN", "VISITS", "REGBOR", "TOTCIR", "KIDCIRCL", "TOTPRO", "KIDPRO", "YAPRO", "TOTATTEN", "KIDATTEN", "YAATTEN")
+
+names(library_data) <- c("state_abr", "county", "lib_lsa_population", "lib_hours_open", "lib_yearly_visits", "lib_registered_users", "lib_circulation", "lib_kids_circulation", "lib_program", "lib_kids_program", "lib_ya_program", "lib_prog_atten", "lib_kids_prog_atten", "lib_ya_prog_atten")
+
+va_library <- library_data %>%
+  filter(state_abr == "VA")
+
+ok_library <- library_data %>%
+  filter(state_abr == "OK")
+
+rm(library_data)
+```
+
