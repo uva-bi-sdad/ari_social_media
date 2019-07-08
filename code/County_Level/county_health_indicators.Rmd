@@ -7,9 +7,10 @@ output: html_document
 library(readr)
 library(readxl)
 library(tidyverse)
+library(reshape2)
 ```
 
-## Virginia ACS Data
+## ACS Data
 
 Explanation of factors:
 
@@ -125,7 +126,7 @@ rm(ACS, ACS_demographic, ACS_economic, ACS_housing, ACS_social)
 ```
 
 
-## Virginia County Health Rankings Data
+## County Health Rankings Data
 
 Explanation of factors:
 fips = FIPS code
@@ -213,9 +214,7 @@ names(county_health_additional_measure_data) <- c("fips", "state", "county", "ch
 
 ok_county_health_rankings <- county_health_ranked_measure_data %>%
   right_join(county_health_additional_measure_data, by=c("fips","state", "county"))%>%
-  mutate(county = ifelse(county == "Charles City", "Charles City County",
-                          ifelse(county == "James City", "James City County",
-                                  ifelse(grepl("City", county), as.character(county), paste(as.character(county),"County", sep = " ")))))
+  mutate(county = paste(as.character(county),"County", sep = " "))
 
 
 rm(county_health_additional_measure_data, county_health_ranked_measure_data, first_row, header)
@@ -223,7 +222,7 @@ rm(county_health_additional_measure_data, county_health_ranked_measure_data, fir
 ```
 
 
-## Virginia Library Data
+## Library Data
 
 Explanation of factors:
 county = county in which the headquarters of the administrative entity is physically located
@@ -256,6 +255,8 @@ ok_library <- library_data %>%
 
 rm(library_data)
 ```
+
+## Migration Data
 
 
 ```{r}
@@ -301,6 +302,76 @@ ok_migration <- ok_migration[!(rowSums(is.na(ok_migration))==NCOL(ok_migration))
 
 rm(first_row, header)
 ```
+
+
+## Kids Count Data
+
+Explanation of factors:
+
+pct_child_no_ins = Percent of all children in county who do not have health insurance
+child_abuse_rate = rate of child abuse per 1,000 children
+pct_foster_1-5 = percent of children ages 1 through 5 who are in foster care
+pct_foster_11-15 = percent of children ages 11 through 15 who are in foster care
+pct_foster_16-18 = percent of children ages 16 through 18 who are in foster care
+pct_foster_6-10 = percent of children ages 6 through 10 who are in foster care
+pct_foster_under_1 = percent of infants (under 1) who are in foster care
+foster_rate = number of children in foster care per 1000 children
+
+```{r}
+
+va_child_ins <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/Kids Count/KC_children-uninsured_virginia_2016.xlsx") %>%
+  select(Location, percent)
+names(va_child_ins) <- c("county", "pct_child_no_ins")
+va_child_food <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/Kids Count/KC_child-food_insecurity_Virginia_2016.xlsx")%>%
+  select(Location, Percent)
+names(va_child_food) <- c("county", "pct_child_food_insecure")
+va_child_abuse <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/Kids Count/KC_child-abuse_virginia_2017.xlsx")
+names(va_child_abuse) <- c("county", "child_abuse_rate")
+
+va_foster <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/Kids Count/KC_foster-care_virginia_2017.xlsx")
+va_foster <- va_foster %>%
+  mutate(Data = replace(Data, Data ==  "*", NA))%>%
+  filter(LocationType == "County", DataFormat == "percent") %>%
+  dcast(Location ~ `Age group`, value.var = "Data")
+names(va_foster) <- c("county", "pct_foster_1-5", "pct_foster_11-15", "pct_foster_16-18", "pct_foster_6-10", "pct_foster_under_1")
+
+va_independent_cities <- c("Alexandria", "Bristol", "Buena Vista", "Chesapeake", "Colonial Heights", "Fairfax City", "Falls Church", "Franklin", "Fredericksburg", "Hampton", "Harrisonburg", "Hopewell", "Lexington", "Lynchburg", "Manassas", "Martinsville", "Newport News", "Norfolk", "Petersburg", "Poquoson", "Portsmouth", "Radford", "Richmond", "Roanoke", "Salem", "Staunton", "Suffolk", "Virginia Beach", "Waynesboro", "Williamsburg", "Winchester")
+
+va_kids_count <- va_child_ins %>%
+  full_join(va_child_food, by = c("county")) %>%
+  full_join(va_child_abuse, by = c("county")) %>%
+  full_join(va_foster, by = c("county"))%>%
+  filter(county != "Data Type") %>%
+  mutate(county = ifelse(county == "Charles City", "Charles City County",
+                          ifelse(county == "James City", "James City County",
+                                  ifelse(grepl("City", county) | grepl("County", county), as.character(county),
+                                         ifelse(county %in% va_independent_cities, paste(as.character(county),"City", sep = " "), paste(as.character(county),"County", sep = " "))))))
+
+rm(va_child_ins, va_child_food, va_child_abuse, va_foster, va_independent_cities)
+
+
+ok_child_ins <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/Kids Count/KC_children-uninsured_oklahoma_2016.xlsx") %>%
+  select(location, percent)
+names(ok_child_ins) <- c("county", "pct_child_no_ins")
+ok_child_food <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/Kids Count/KC_child-food_insecurity_oklahoma_2016.xlsx")%>%
+  select(Location, Percent)
+names(ok_child_food) <- c("county", "pct_child_food_insecure")
+ok_child_abuse <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/Kids Count/KC_child-abuse_oklahoma_2017.xlsx")
+names(ok_child_abuse) <- c("county", "child_abuse_rate")
+ok_foster <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/Kids Count/KC_foster-care_oklahoma_2017.xlsx")%>%
+  select(Location, rate_per_1000)
+names(ok_foster) <- c("county", "foster_rate")
+
+
+ok_kids_count <- ok_child_ins %>%
+  full_join(ok_child_food, by = c("county")) %>%
+  full_join(ok_child_abuse, by = c("county")) %>%
+  full_join(ok_foster, by = c("county")) %>%
+  filter(county != "Age group")
+
+rm(ok_child_ins, ok_child_food, ok_child_abuse, ok_foster)
+```
+
 
 ###looking at relationship between health rankings and migration data
 ```{r}
