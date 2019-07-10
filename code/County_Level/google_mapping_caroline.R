@@ -1,13 +1,22 @@
 #2019-07-09
-#Mapping tools for Caroline County, VA
+#Mapping tools
 
 #devtools::install_github("dads2busy/dataplumbr")
+#install.packages("urltools")
 
 library(data.table)
 library(jsonlite)
 library(dataplumbr)
 library(dplyr)
 library(stringr)
+library(urltools)
+
+queries <- c("fast+food", "catholic+church", "kingdom+hall+of+jehovas+witnesses", "apostolic", "baptist", "episcopal", "lutheran", "christian+center", "pentecostal", "presbyterian", "methodist", "synagogue", "temple", "liquor+store")
+counties <- c("Caroline+County+Virginia", "King+George+County+Virginia", "Stafford+County+Virginia", "Spotsylvania+County+Virginia", "Hanover+County+Virginia", "King+William+County+Virginia", "King+and+Queen+County+Virginia", "Essex+County+Virginia", "Comanche+County+Oklahoma", "Cotton+County+Oklahoma", "Stephens+County+Oklahoma", "Grady+County+Oklahoma", "Caddo+County+Oklahoma", "Kiowa+County+Oklahoma", "Tillman+County+Oklahoma")
+api_url <- "https://maps.googleapis.com/maps/api/place/textsearch/json?query=%s+in+%s&key="
+
+url_queries <- sprintf("https://maps.googleapis.com/maps/api/place/textsearch/json?query=%s+in+&key=", queries)
+
 
 ########FAST FOOD########
 # get fast food search from google api
@@ -244,23 +253,3 @@ fnl12 <- merge(gresult12, locations, by = "placeid")
 
 # get the ones from Caroline County
 liquor_stores <- fnl12[county_name=="Caroline", .(name, addr, lat, lng, county_fips, county_name)][order(name)]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-fwrite(places_of_worship, file = "places_of_worship.csv")
-
