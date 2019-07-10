@@ -10,12 +10,104 @@ library(dataplumbr)
 library(dplyr)
 library(stringr)
 library(urltools)
+library(tidyr)
+library(purrr)
 
 queries <- c("fast+food", "catholic+church", "kingdom+hall+of+jehovas+witnesses", "apostolic", "baptist", "episcopal", "lutheran", "christian+center", "pentecostal", "presbyterian", "methodist", "synagogue", "temple", "liquor+store")
 counties <- c("Caroline+County+Virginia", "King+George+County+Virginia", "Stafford+County+Virginia", "Spotsylvania+County+Virginia", "Hanover+County+Virginia", "King+William+County+Virginia", "King+and+Queen+County+Virginia", "Essex+County+Virginia", "Comanche+County+Oklahoma", "Cotton+County+Oklahoma", "Stephens+County+Oklahoma", "Grady+County+Oklahoma", "Caddo+County+Oklahoma", "Kiowa+County+Oklahoma", "Tillman+County+Oklahoma")
-api_url <- "https://maps.googleapis.com/maps/api/place/textsearch/json?query=%s+in+%s&key="
+counties_small <- c("Caroline+County+Virginia", "King+George+County+Virginia")
+queries_small <- queries <- c("fast+food", "catholic+church", "kingdom+hall+of+jehovas+witnesses")
+#api_url <- "https://maps.googleapis.com/maps/api/place/textsearch/json?query=%s+in+%s&key="
 
-url_queries <- sprintf("https://maps.googleapis.com/maps/api/place/textsearch/json?query=%s+in+&key=", queries)
+#url_queries <- sprintf("https://maps.googleapis.com/maps/api/place/textsearch/json?query=%s+in+&key=", queries)
+
+
+get_query <- function(county, query){
+  
+  url <- str_c("https://maps.googleapis.com/maps/api/place/textsearch/json?query=", query, "+in+", county, "&key=", sep = "", Sys.getenv("GOOGLE_API_KEY"))
+  
+  goog1 <- try.try_try_try(fromJSON(url)) 
+  
+  # create data.table of fast food locations
+  name <- goog1$results$name
+  addr <- goog1$results$formatted_address
+  placeid <- goog1$results$place_id
+  loc <- goog1$results$geometry$location
+  type <- rep(str_replace_all(query, "\\+", " "), length(name))
+  gresult <- data.table(name, addr, placeid, loc, type)#%>%
+    #mutate(type = "it works") #str_replace(query, "\\+", " "))
+  
+  # get geographies from fcc api
+  locations <- setDT(dataplumbr::loc.lats_lons2geo_areas(gresult$placeid, gresult$lat, gresult$lng), keep.rownames = T)
+  setnames(locations, "rn", "placeid")
+  
+  # merge
+  fnl <- merge(gresult, locations, by = "placeid")
+  # 
+  # # get the ones from Caroline County
+  
+  query_results <- fnl[county_name==str_replace(str_extract(county, ".+?(?=\\+County)"), "\\+", " "), .(name, addr, lat, lng, county_fips, county_name, type)][order(name)]
+  # 
+  return(query_results)
+  
+}
+
+churches_food <- vector(mode = "list", length = 210)
+index <- 1
+
+for (county in counties){
+  for (query in queries){
+    if(county==counties[15] & query==queries[13]){
+      index <- index + 1
+      next
+    }
+    churches_food[[index]] <- get_query(county, query)
+    index <- index + 1
+  }
+}
+
+data_frame <- do.call(rbind, churches_food)
+
+
+churches_food <- map_df(.x = counties, .f = function(county) {
+  map2_df(.x = county, .y = queries, .f = get_query)
+})
+
+try_function <- get_query(counties[15], queries[13])
+
+####DEBUG ME#####
+
+query <- queries[13]
+county <- counties[15]
+
+url <- str_c("https://maps.googleapis.com/maps/api/place/textsearch/json?query=", query, "+in+", county, "&key=", sep = "", Sys.getenv("GOOGLE_API_KEY"))
+
+goog1 <- try.try_try_try(fromJSON(url)) 
+
+# create data.table of fast food locations
+name <- goog1$results$name
+addr <- goog1$results$formatted_address
+placeid <- goog1$results$place_id
+loc <- goog1$results$geometry$location
+type <- rep(str_replace_all(query, "\\+", " "), length(name))
+gresult <- data.table(name, addr, placeid, loc, type)#%>%
+#mutate(type = "it works") #str_replace(query, "\\+", " "))
+
+# get geographies from fcc api
+locations <- setDT(dataplumbr::loc.lats_lons2geo_areas(gresult$placeid, gresult$lat, gresult$lng), keep.rownames = T)
+setnames(locations, "rn", "placeid")
+
+# merge
+fnl <- merge(gresult, locations, by = "placeid")
+# 
+# # get the ones from Caroline County
+
+query_results <- fnl[county_name==str_replace(str_extract(county, ".+?(?=\\+County)"), "\\+", " "), .(name, addr, lat, lng, county_fips, county_name, type)][order(name)]
+# 
+return(query_results)
+
+
+
 
 
 ########FAST FOOD########
@@ -44,7 +136,7 @@ fast_food <- fnl[county_name=="Caroline", .(name, addr, lat, lng, county_fips, c
 
 
 
-########PLACES OF WORSHIP########
+maybe ########PLACES OF WORSHIP########
 # verifying number of places with https://co.caroline.va.us/330/Churches
 
 # Catholic churches
