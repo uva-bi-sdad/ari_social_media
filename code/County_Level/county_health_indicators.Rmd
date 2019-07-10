@@ -458,7 +458,9 @@ va_indicators <- va_ACS %>%
   full_join(va_library, by = c("county"))%>%
   full_join(va_death, by = c("county"))%>%
   select(-c(state))
-  
+
+va_indicators <- cbind(va_indicators[,1], sapply(va_indicators[,-1], as.numeric))
+
 ok_indicators <- ok_ACS %>%
   full_join(ok_county_health_rankings, by = c("state", "county"))%>%
   full_join(ok_kids_count, by = c("county"))%>%
@@ -467,6 +469,7 @@ ok_indicators <- ok_ACS %>%
   full_join(ok_death, by = c("county"))%>%
   select(-c(state))
 
+ok_indicators <- cbind(ok_indicators[,1], sapply(ok_indicators[,-1], as.numeric))
 
 rm(va_ACS, va_county_health_rankings, va_kids_count, va_migration, va_library, va_death, ok_ACS, ok_county_health_rankings, ok_kids_count, ok_migration, ok_library, ok_death, va_independent_cities, va_city_county_overlap)
 
@@ -477,9 +480,32 @@ va_counties <- va_indicators %>%
 ok_counties <- ok_indicators %>%
   filter(county %in% c("Caddo County", "Grady County", "Stephens County", "Cotton County", "Tillman County", "Kiowa County", "Comanche County"))
 
-skim(ok_indicators)
+#skim(ok_indicators)
 ```
 
+
+```{r}
+#want to be higher
+pos_indicators <- va_indicators %>%
+  select(pct_commute_carpool, pct_commute_public, pct_commute_walk, median_income, pct_health_ins, pct_owner_occupied_homes, pct_attained_hs, pct_bachelors, pct_grad_degree, pct_hs_or_higher, pct_college_or_higher, pct_enrolled_prek, pct_enrolled_elementary_middle, pct_enrolled_hs, pct_less_than_hs, pcp_ratio, social_assoc_rate, median_income_black, median_income_hispanic, pct_stayed, pct_movers_within_county, pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person)
+
+#want to be lower
+neg_indicators <- va_indicators %>%
+  select(pct_commute_drive, pct_work_home, commute_time_mean, pct_no_health_ins, pct_impoverished, pct_renter_occupied_homes, teen_birth_rate, preventable_hosp_rate, pct_unemployed, pct_children_poverty, income_ratio, air_pollution, severe_housing_problems, pct_food_insecure, segregation_black_white, segregation_white_non, pct_child_no_ins, pct_child_food_insecure, child_abuse_rate, death_rate)
+
+
+
+
+row_ranks <- sapply(va_counties, function(vec) rank(-vec))
+
+pos_rank <- sapply(pos_indicators, function(vec) rank(vec))
+neg_rank <- sapply(neg_indicators, function(vec) rank(-vec))
+
+#row_ranks <- as.data.frame(row_ranks)
+
+va_indicators_2 <- cbind(va_indicators, rank(-rowSums(as.data.frame(cbind(pos_rank, neg_rank)))))
+
+```
 
 ###looking at relationship between health rankings and migration data
 ```{r}
