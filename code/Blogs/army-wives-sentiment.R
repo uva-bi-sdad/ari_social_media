@@ -11,7 +11,7 @@
 #install.packages("wordcloud") # word-cloud generator 
 #install.packages("RColorBrewer") # color palettes
 #install.packages("SentimentAnalysis")
-=======
+
 
 library(jsonlite)
 library(tidyverse)
@@ -101,28 +101,25 @@ entries2 <- tibble(text = data$entry, tag = data$tags)
 
 #of the PCS tagged posts, how positive/neutral/negative are they?
 #this isn't working because it's only pulling tag if it's the first in list
-pcs <- entries2 %>%
-  filter(tag == "PCS")
+pcs <- entries2[grepl("PCS", entries2$tag),]
 sentiment <- analyzeSentiment(pcs$text)
 pcs_sentiment <- convertToDirection(sentiment$SentimentQDAP)
+plot(pcs_sentiment)
 
 #of the Army life tagged posts, how positive/neutral/negative are they?
-army_life <- entries2 %>%
-  filter(tag == "Army life")
+army_life <- entries2[grepl("Army life", entries2$tag),]
 sentiment <- analyzeSentiment(army_life$text)
 army_life_sentiment <- convertToDirection(sentiment$SentimentQDAP)
 plot(army_life_sentiment)
 
 #of the deployment tagged posts, how positive/neutral/negative are they?
-deployment <- entries2 %>%
-  filter(tag == "deployment")
+deployment <- entries2[grepl("deployment", entries2$tag),]
 sentiment <- analyzeSentiment(deployment$text)
 deployment_sentiment <- convertToDirection(sentiment$SentimentQDAP)
 plot(deployment_sentiment)
 
 #of the Army wife tagged posts, how positive/neutral/negative are they?
-advice <- entries2 %>%
-  filter(tag == "advice")
-sentiment <- analyzeSentiment(advice$text)
-advice_sentiment <- convertToDirection(sentiment$SentimentQDAP)
-plot(advice_sentiment)
+mental_health <- entries2[grepl("mental health", entries2$tag),]
+sentiment <- analyzeSentiment(mental_health$text)
+mental_health_sentiment <- convertToDirection(sentiment$SentimentQDAP)
+plot(mental_health_sentiment)
