@@ -1,11 +1,17 @@
 #THIS IS THE FILE FOR SCRAPING THE FACEBOOK PAGE POSTS
+install.packages("Rfacebook")
+install.packages("dplyr")
+install.packages("devtools")
+install.packages("httpuv")
 
 library(Rfacebook)
 library(dplyr)
-
+library(devtools)
+library(httpuv)
 
 #initialize variable for Facebook API App token
-tokenapp <- #PUT YOUR APP TOKEN HERE
+tokenapp <- fbOAuth(app_id="457565878412499", app_secret="7db27c23c6fcaa578bc8c48e12e62fac")
+
 
 #number of posts to scrape per day
 numposts <- 40
