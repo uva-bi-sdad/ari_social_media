@@ -10,6 +10,8 @@
 #install.packages("qdap")
 #install.packages("wordcloud") # word-cloud generator 
 #install.packages("RColorBrewer") # color palettes
+#install.packages("SentimentAnalysis")
+=======
 
 library(jsonlite)
 library(tidyverse)
@@ -18,6 +20,7 @@ library(tm)
 library(qdap)
 library(wordcloud)
 library(RColorBrewer)
+library(SentimentAnalysis)
 
 setwd("~/ari_social_media/data/working/Blogs")
 #read in data, remove all carriage returns from the "entry" column (body of blog text)
@@ -25,6 +28,7 @@ data <- fromJSON("armywivesdata.json")
 data[,c("entry")]=stringr::str_replace_all(data[,c("entry")], "[\r\n]" , " ")
 data[,c("entry")]=stringr::str_trim(data[,c("entry")])
 entries <- tibble(text = data$entry)
+entries2 <- tibble(text = data$entry, tag = data$tags)
 
 #separate every single word into a different row
 #going from 1141 observations of blog posts to 294048 words from those posts
@@ -39,12 +43,86 @@ entries <- entries %>%
 top50_words <- freq_terms(entries, 50, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
 top50_words
 
+
+#count of top 200 words
+top200_words <- freq_terms(entries, 200, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
+top200_words
+
+#create word cloud of top 200 words
+=======
 #count of top 100 words
 top100_words <- freq_terms(entries, 100, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
 top100_words
 
 #create word cloud
+
 set.seed(1234)
 wordcloud(words = top200_words$WORD, freq = top200_words$FREQ, min.freq = 1,
           max.words=200, random.order=FALSE, rot.per=0.35, 
           colors=brewer.pal(8, "RdYlBu"))
+
+
+#join bing library of words and their associated sentiments
+bing <- get_sentiments("bing")
+entries_bing <- entries %>%
+  anti_join(stop_words) %>%
+  inner_join(bing)
+
+#create separate lists of positive and negative words from posts
+entries_bing_pos <- entries_bing %>%
+  filter(sentiment == "positive")
+top200_pos <- freq_terms(entries_bing_pos$word, 200, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
+
+entries_bing_neg <- entries_bing %>%
+  filter(sentiment == "negative")
+top200_neg <- freq_terms(entries_bing_neg$word, 200, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
+
+
+#create word cloud of top 200 negative and positive words
+#positive words
+set.seed(1234)
+wordcloud(words = top200_pos$WORD, freq = top200_pos$FREQ, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "RdYlBu"))
+
+#negative words
+set.seed(1234)
+wordcloud(words = top200_neg$WORD, freq = top200_pos$FREQ, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "RdYlBu"))
+
+
+
+#sentiment analysis of tagged blog posts
+entries2 <- tibble(text = data$entry, tag = data$tags)
+#entries2 <- entries2 %>%
+#  unnest_tokens(word, text) %>%
+#  anti_join(stop_words)
+
+#of the PCS tagged posts, how positive/neutral/negative are they?
+#this isn't working because it's only pulling tag if it's the first in list
+pcs <- entries2 %>%
+  filter(tag == "PCS")
+sentiment <- analyzeSentiment(pcs$text)
+pcs_sentiment <- convertToDirection(sentiment$SentimentQDAP)
+
+#of the Army life tagged posts, how positive/neutral/negative are they?
+army_life <- entries2 %>%
+  filter(tag == "Army life")
+sentiment <- analyzeSentiment(army_life$text)
+army_life_sentiment <- convertToDirection(sentiment$SentimentQDAP)
+plot(army_life_sentiment)
+
+#of the deployment tagged posts, how positive/neutral/negative are they?
+deployment <- entries2 %>%
+  filter(tag == "deployment")
+sentiment <- analyzeSentiment(deployment$text)
+deployment_sentiment <- convertToDirection(sentiment$SentimentQDAP)
+plot(deployment_sentiment)
+
+#of the Army wife tagged posts, how positive/neutral/negative are they?
+advice <- entries2 %>%
+  filter(tag == "advice")
+sentiment <- analyzeSentiment(advice$text)
+advice_sentiment <- convertToDirection(sentiment$SentimentQDAP)
+plot(advice_sentiment)
