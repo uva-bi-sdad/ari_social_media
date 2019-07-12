@@ -12,6 +12,8 @@
 #install.packages("RColorBrewer") # color palettes
 #install.packages("SentimentAnalysis")
 
+==========
+
 library(jsonlite)
 library(tidyverse)
 library(tidytext)
@@ -46,11 +48,21 @@ top50_words
 top200_words <- freq_terms(entries, 200, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
 top200_words
 
+
 #create word cloud of top 200 words
+=======
+#count of top 100 words
+top100_words <- freq_terms(entries, 100, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
+top100_words
+
+#create word cloud
 set.seed(1234)
 wordcloud(words = top200_words$WORD, freq = top200_words$FREQ, min.freq = 1,
           max.words=200, random.order=FALSE, rot.per=0.35, 
           colors=brewer.pal(8, "RdYlBu"))
+
+
+=======
 
 #join bing library of words and their associated sentiments
 bing <- get_sentiments("bing")
@@ -90,29 +102,36 @@ entries2 <- tibble(text = data$entry, tag = data$tags)
 #  anti_join(stop_words)
 
 #of the PCS tagged posts, how positive/neutral/negative are they?
-#this isn't working because it's only pulling tag if it's the first in list
-pcs <- entries2 %>%
-  filter(tag == "PCS")
+pcs <- entries2[grepl("PCS", entries2$tag),]
 sentiment <- analyzeSentiment(pcs$text)
 pcs_sentiment <- convertToDirection(sentiment$SentimentQDAP)
+plot(pcs_sentiment)
 
 #of the Army life tagged posts, how positive/neutral/negative are they?
-army_life <- entries2 %>%
-  filter(tag == "Army life")
+army_life <- entries2[grepl("Army life", entries2$tag),]
+sentiment <- analyzeSentiment(army_life$text)
+army_life_sentiment <- convertToDirection(sentiment$SentimentQDAP)
+plot(army_life_sentiment)
+
+#of the Army life tagged posts, how positive/neutral/negative are they?
+army_life <- entries2[grepl("Army life", entries2$tag),]
 sentiment <- analyzeSentiment(army_life$text)
 army_life_sentiment <- convertToDirection(sentiment$SentimentQDAP)
 plot(army_life_sentiment)
 
 #of the deployment tagged posts, how positive/neutral/negative are they?
-deployment <- entries2 %>%
-  filter(tag == "deployment")
+deployment <- entries2[grepl("deployment", entries2$tag),]
 sentiment <- analyzeSentiment(deployment$text)
 deployment_sentiment <- convertToDirection(sentiment$SentimentQDAP)
 plot(deployment_sentiment)
 
-#of the Army wife tagged posts, how positive/neutral/negative are they?
-advice <- entries2 %>%
-  filter(tag == "advice")
+#of the advice tagged posts, how positive/neutral/negative are they?
+advice <- entries2[grepl("advice", entries2$tag),]
 sentiment <- analyzeSentiment(advice$text)
 advice_sentiment <- convertToDirection(sentiment$SentimentQDAP)
 plot(advice_sentiment)
+
+mental_health <- entries2[grepl("mental health", entries2$tag),]
+sentiment <- analyzeSentiment(mental_health$text)
+mental_health_sentiment <- convertToDirection(sentiment$SentimentQDAP)
+plot(mental_health_sentiment)

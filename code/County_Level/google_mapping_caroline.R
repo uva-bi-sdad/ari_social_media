@@ -1,0 +1,77 @@
+#2019-07-09
+#Mapping tools
+
+#devtools::install_github("dads2busy/dataplumbr")
+#install.packages("urltools")
+
+library(data.table)
+library(jsonlite)
+library(dataplumbr)
+library(dplyr)
+library(stringr)
+library(urltools)
+library(tidyr)
+library(purrr)
+library(readr)
+
+queries <- c("fast+food", "catholic+church", "kingdom+hall+of+jehovas+witnesses", "apostolic", "baptist", "episcopal", "lutheran", "christian+center", "pentecostal", "presbyterian", "methodist", "synagogue", "temple", "liquor+store", "church")
+counties <- c("Caroline+County+Virginia", "King+George+County+Virginia", "Stafford+County+Virginia", "Spotsylvania+County+Virginia", "Hanover+County+Virginia", "King+William+County+Virginia", "King+and+Queen+County+Virginia", "Essex+County+Virginia", "Comanche+County+Oklahoma", "Cotton+County+Oklahoma", "Stephens+County+Oklahoma", "Grady+County+Oklahoma", "Caddo+County+Oklahoma", "Kiowa+County+Oklahoma", "Tillman+County+Oklahoma")
+
+get_query <- function(county, query){
+  
+  url <- str_c("https://maps.googleapis.com/maps/api/place/textsearch/json?query=", query, "+in+", county, "&key=", sep = "", Sys.getenv("GOOGLE_API_KEY"))
+  
+  goog1 <- try.try_try_try(fromJSON(url)) 
+  
+  # create data.table of locations
+  name <- goog1$results$name
+  addr <- goog1$results$formatted_address
+  placeid <- goog1$results$place_id
+  loc <- goog1$results$geometry$location
+  type <- rep(str_replace_all(query, "\\+", " "), length(name))
+  gresult <- data.table(name, addr, placeid, loc, type)
+  
+  # get geographies from fcc api
+  locations <- setDT(dataplumbr::loc.lats_lons2geo_areas(gresult$placeid, gresult$lat, gresult$lng), keep.rownames = T)
+  setnames(locations, "rn", "placeid")
+  
+  # merge
+  fnl <- merge(gresult, locations, by = "placeid")
+  
+  #verify in correct county
+  query_results <- fnl[county_name==str_replace(str_extract(county, ".+?(?=\\+County)"), "\\+", " "), .(name, addr, lat, lng, county_fips, county_name, type)][order(name)]
+  
+  return(query_results)
+}
+
+churches_food <- vector(mode = "list", length = 210)
+length_vector <- vector()
+index <- 1
+
+for (i in c(1:20)){
+  for (county in counties){
+    for (query in queries){
+      if(county==counties[15] & query==queries[13] | is.na(county==counties[15] & query==queries[13])){
+        index <- index + 1
+        next
+      }
+      churches_food[[index]] <- get_query(county, query)
+      print(index)
+      index <- index + 1
+    }
+  }
+  
+  length_vector <- c(length_vector, length(unique(as.data.frame(do.call(rbind, churches_food)))))
+  
+}
+
+df <- as.data.frame(unique(as.data.frame(do.call(rbind, churches_food))))
+library(maditr)
+df2 <- df %>%
+  dt_mutate(county_fips = unlist(county_fips),
+            county_name = unlist(county_name))
+fwrite(df2, "/home/jk9ra/ari_social_media/data/working/County_Level/churchs_fast_good_liquor.csv")
+
+churches_food <- map_df(.x = counties, .f = function(county) {
+  map2_df(.x = county, .y = queries, .f = get_query)
+})

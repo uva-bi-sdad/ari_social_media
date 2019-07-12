@@ -1,4 +1,13 @@
 #get users who use a certain hastag
+install.packages("twitteR")
+install.packages("tm")
+install.packages("syuzhet")
+install.packages("ggplot2")
+install.packages("descr")
+install.packages("magrittr")
+install.packages("rtweet")
+install.packages("tidytext")
+
 library(twitteR)
 library(tm)
 library(syuzhet)

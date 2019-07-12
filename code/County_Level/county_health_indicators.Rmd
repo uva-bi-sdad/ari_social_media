@@ -16,7 +16,6 @@ va_city_county_overlap <- c("Charles City", "James City", "Franklin", "Richmond"
 ```
 
 ## ACS Data
-
 Explanation of factors:
 
 fips = FIPS Code
@@ -92,6 +91,7 @@ ACS_housing <-read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/A
 names(ACS_housing) <- c("county", "state", "pct_owner_occupied_homes", "pct_renter_occupied_homes", "pct_moved_after_2014", "pct_moved_2010_2014", "pct_moved_2000_2009", "pct_moved_1990_1999", "pct_moved_1980_1989", "pct_moved_1979_earlier")
 
 
+
 #Read in American Community Survey Economic Characteristics for 2017 dataset
 ACS_economic <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/ACS_OK_VA_Economic.csv")[-c(1),] %>%
   mutate(county = str_extract(`GEO.display-label`, ".+?(?=, )"),
@@ -135,7 +135,6 @@ rm(ACS, ACS_demographic, ACS_economic, ACS_housing, ACS_social)
 
 ```
 
-
 ## County Health Rankings Data
 
 Explanation of factors:
@@ -146,6 +145,7 @@ pcp_ratio = ratio of primary care physicians to population
 pct_children_poverty = percent of children (under 18) living in poverty
 income_ratio = ratio of household income at the 80th percentile to income at the 20th percentile
 social_assoc_rate = social associations / population * 100,000
+
 air_pollution = average daily PM2.5 (particulate matter)
 water_violations = county affected by drinking water violation
 severe_housing_problems = percentage of households with at least 1 of 4 housing problems: overcrowding, high housing costs, or lack of kitchen or plumbing facilities
@@ -230,7 +230,6 @@ rm(county_health_additional_measure_data, county_health_ranked_measure_data, fir
 
 ```
 
-
 ## Library Data
 
 Explanation of factors:
@@ -293,8 +292,7 @@ rm(library_data, va_ok_library, king_queen_lib, king_william_lib, stafford_lib)
 
 ## Migration Data
 
-
-```{r Migration}
+```{r}
 
 first_row <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/county-to-county-2012-2016-previous-residence-sort.xlsx", sheet = "Virginia", skip = 1)
 write.csv(first_row,'first_row.csv')
@@ -328,6 +326,7 @@ header <- sapply(read.csv("first_row.csv", nrow=2), paste, collapse="_")
 header <- sapply(read.csv("first_row.csv", header=FALSE, nrow=2), paste, collapse="_")
 
 ok_migration <- read.csv("first_row.csv", header = FALSE, skip=3, col.names=header) %>%
+
   select("State.U.S..Island.Area.Foreign.Region.of.Residence.1.Year.Ago_NA", "County.of.Residence.1.Year.Ago_NA", "County.of.Residence.1.Year.Ago__1_Population.1.Year.and.Over", "X__15_Nonmovers", "X__19_Movers.within.Same.County") %>% #"X__17_Movers.within.United.States", , "X__21_Movers.to.Different.County..Same.State", "X__23_Movers.to.Different.State", "X__25_Movers.to.Puerto.Rico") %>%
   mutate(County.of.Residence.1.Year.Ago_NA = tools::toTitleCase(as.character(County.of.Residence.1.Year.Ago_NA)))
 
