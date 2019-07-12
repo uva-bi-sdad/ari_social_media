@@ -446,6 +446,19 @@ ok_death <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/Dea
 names(ok_death) <- c("county", "death_rate")
 ```
 
+## Fast food, churches, and liquor
+
+```{r}
+food_churches <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/churchs_fast_good_liquor.csv")%>%
+  mutate(type = ifelse(type != "liquor store" & type != "fast food", "place of worship", type))
+
+food_churches <- unique(food_churches)
+
+write_csv(food_churches, "/home/jk9ra/ari_social_media/data/working/County_Level/places_of_worship_fast_food_liquor.csv")
+
+```
+
+
 
 ## Combine all Virginia and Oklahoma data, respectively
 
@@ -483,6 +496,8 @@ ok_counties <- ok_indicators %>%
 ```
 
 
+
+## Simple ranking
 ```{r}
 #want to be higher
 pos_indicators <- va_indicators %>%
