@@ -10,10 +10,29 @@ library(tidyverse)
 library(reshape2)
 library(skimr)
 
+```
+
+
+```{r}
 va_independent_cities <- c("Alexandria", "Bristol", "Buena Vista", "Charlottesville", "Chesapeake", "Colonial Heights", "Covington", "Danville", "Emporia", "Fairfax City", "Falls Church", "Franklin", "Fredericksburg", "Galax", "Hampton", "Harrisonburg", "Hopewell", "Lexington", "Lynchburg", "Manassas", "Manassas Park", "Martinsville", "Newport News", "Norfolk", "Norton", "Petersburg", "Poquoson", "Portsmouth", "Radford", "Richmond", "Roanoke", "Salem", "Staunton", "Suffolk", "Virginia Beach", "Waynesboro", "Williamsburg", "Winchester")
 
 va_city_county_overlap <- c("Charles City", "James City", "Franklin", "Richmond", "Roanoke")
+
+clean_county_names <- function(county_level_data, county){
+  county_level_data <- county_level_data %>%
+    mutate(county = tolower(as.character(county)))%>%
+    mutate(county = tools::toTitleCase(as.character(county)))%>%
+    mutate(county = ifelse(county %in% va_city_county_overlap, str_c(as.character(county), "County", sep = " "),
+                           ifelse(county == "City of Suffolk", "Suffolk City", 
+                                  ifelse(str_detect(county, "City") | str_detect(county, "County"), as.character(county),
+                                         ifelse(county %in% va_independent_cities, str_c(as.character(county), "City", sep = " "), str_c(as.character(county), "County", sep = " "))))))
+  
+  return(county_level_data)
+  
+}
+
 ```
+
 
 ## ACS Data
 Explanation of factors:
@@ -188,10 +207,7 @@ names(county_health_additional_measure_data) <- c("state", "county", "pct_food_i
 
 va_county_health_rankings <- county_health_ranked_measure_data %>%
   right_join(county_health_additional_measure_data, by=c("state", "county"))%>%
-  mutate(county = ifelse(county == "Charles City", "Charles City County",
-                          ifelse(county == "James City", "James City County",
-                                  ifelse(str_detect(county, "City"), as.character(county), str_c(as.character(county),"County", sep = " ")))))
-
+  clean_county_names()
 
 
 
@@ -209,7 +225,6 @@ county_health_ranked_measure_data <- read.csv("first_row.csv", header = FALSE, s
 names(county_health_ranked_measure_data) <- c("state", "county", "pct_fair_poor_health", "teen_birth_rate", "pcp_ratio", "preventable_hosp_rate", "pct_unemployed", "pct_children_poverty", "income_ratio", "social_assoc_rate", "air_pollution", "water_violations", "severe_housing_problems")
 
 
-
 first_row <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/2017_County_Health_Rankings_Oklahoma_Data-v2.xls", sheet = 5)
 write.csv(first_row,'first_row.csv')
 
@@ -223,7 +238,7 @@ names(county_health_additional_measure_data) <- c("state", "county", "pct_food_i
 
 ok_county_health_rankings <- county_health_ranked_measure_data %>%
   right_join(county_health_additional_measure_data, by=c("state", "county"))%>%
-  mutate(county = str_c(as.character(county),"County", sep = " "))
+  clean_county_names()
 
 
 rm(county_health_additional_measure_data, county_health_ranked_measure_data, first_row, header)
@@ -255,12 +270,7 @@ names(library_data) <- c("state_abr", "county", "lib_lsa_population", "lib_hours
 
 va_ok_library <- library_data %>%
   filter(state_abr == "VA" | state_abr == "OK")%>%
-  mutate(county = tolower(as.character(county)))%>%
-  mutate(county = tools::toTitleCase(as.character(county)))%>%
-  mutate(county = ifelse(county %in% va_city_county_overlap, str_c(as.character(county), "County", sep = " "),
-                         ifelse(county == "City of Suffolk", "Suffolk City", 
-                                ifelse(str_detect(county, "City") | str_detect(county, "County"), as.character(county),
-                                       ifelse(county %in% va_independent_cities, str_c(as.character(county), "City", sep = " "), str_c(as.character(county), "County", sep = " "))))))%>%
+  clean_county_names()%>%
   group_by(county, state_abr)%>%
   summarise(lib_lsa_population = sum(lib_lsa_population), lib_hours_open = sum(lib_hours_open), lib_yearly_visits = sum(lib_yearly_visits), lib_registered_users = sum(lib_registered_users), lib_program = sum(lib_program), lib_prog_atten = sum(lib_prog_atten))%>%
   mutate(pct_lib_program_atten = lib_prog_atten/lib_lsa_population, lib_visit_rate = lib_yearly_visits/lib_lsa_population, pct_lib_patrons = lib_registered_users/lib_lsa_population, lib_hours_per_person = lib_hours_open/lib_lsa_population)%>%
@@ -383,10 +393,7 @@ va_kids_count <- va_child_ins %>%
   full_join(va_child_food, by = c("county")) %>%
   full_join(va_child_abuse, by = c("county")) %>%         #full_join(va_foster, by = c("county"))%>%
   filter(county != "Data Type") %>%
-  mutate(county = ifelse(county == "Charles City", "Charles City County",
-                          ifelse(county == "James City", "James City County",
-                                  ifelse(str_detect(county, "City") | str_detect(county, "County"), as.character(county),
-                                         ifelse(county %in% va_independent_cities, str_c(as.character(county), "City", sep = " "), str_c(as.character(county),"County", sep = " "))))))
+  clean_county_names()
 
 rm(va_child_ins, va_child_food, va_child_abuse) #, va_foster)
 
@@ -412,17 +419,6 @@ ok_kids_count <- ok_child_ins %>%
 rm(ok_child_ins, ok_child_food, ok_child_abuse, ok_foster)
 ```
 
-## Places of Worship
-
-```{r}
-# places_of_worship <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/All_Places_of_Worship.csv")
-# 
-# va_worship <- places_of_worship %>%
-#   filter(STATE == "VA") %>%
-#   group_by(COUNTY) %>%
-#   summarise(places_of_worship = n()) #%>%
-#   summarise(sum(places_of_worship))
-```
 
 ## Death data
 
@@ -446,16 +442,31 @@ ok_death <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/Dea
 names(ok_death) <- c("county", "death_rate")
 ```
 
+## Voting Information
+
+```{r}
+va_voting <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/governor_race_virginia_totals_2017.csv")%>%
+  mutate(county = tools::toTitleCase(as.character(county_name)))%>%
+  clean_county_names()%>%
+  select(-c(county_name))
+
+ok_voting <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/governor_race_oklahoma_totals_2018.csv")%>%
+  mutate(county = tools::toTitleCase(as.character(county_name)))%>%
+  clean_county_names()%>%
+  select(-c(county_name))
+```
+
 ## Fast food, churches, and liquor
 
 ```{r}
-food_churches <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/churchs_fast_good_liquor.csv")%>%
-  mutate(type = ifelse(type != "liquor store" & type != "fast food", "place of worship", type))
+worship_fast_food <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/places_of_worship_fast_food_liquor (1).csv") %>%
+  group_by(county_name, type)%>%
+  summarize(number = n())%>%
+  dcast(county_name ~ type, value.var = "number")
 
-food_churches <- unique(food_churches)
+names(worship_fast_food) <- c("county", "num_fast_food", "num_liquor_stores", "num_places_of_worship")
 
-write_csv(food_churches, "/home/jk9ra/ari_social_media/data/working/County_Level/places_of_worship_fast_food_liquor.csv")
-
+worship_fast_food <- clean_county_names(worship_fast_food)
 ```
 
 
@@ -469,9 +480,12 @@ va_indicators <- va_ACS %>%
   full_join(va_migration, by = c("state", "county"))%>%
   full_join(va_library, by = c("county"))%>%
   full_join(va_death, by = c("county"))%>%
-  select(-c(state))
+  full_join(va_voting, by = c("county"))%>%
+  select(-c("state"))
 
-va_indicators <- cbind(va_indicators[,1], sapply(va_indicators[,-1], as.numeric))
+va_indicators <- cbind(va_indicators[,1], sapply(va_indicators[,-1], as.numeric))%>%
+  mutate(pct_registered = total_registered/population, pct_voted = total_votes/population, pct_reg_voted = total_votes/total_registered)%>%
+  select(-c("total_registered", "total_votes"))
 
 ok_indicators <- ok_ACS %>%
   full_join(ok_county_health_rankings, by = c("state", "county"))%>%
@@ -479,18 +493,27 @@ ok_indicators <- ok_ACS %>%
   full_join(ok_migration, by = c("state", "county"))%>%
   full_join(ok_library, by = c("county"))%>%
   full_join(ok_death, by = c("county"))%>%
+  full_join(ok_voting, by = c("county"))%>%
   select(-c(state))
 
-ok_indicators <- cbind(ok_indicators[,1], sapply(ok_indicators[,-1], as.numeric))
+ok_indicators <- cbind(ok_indicators[,1], sapply(ok_indicators[,-1], as.numeric))%>%
+  mutate(pct_registered = total_registered/population, pct_voted = total_votes/population, pct_reg_voted = total_votes/total_registered)%>%
+  select(-c("total_registered", "total_votes"))
 
-rm(va_ACS, va_county_health_rankings, va_kids_count, va_migration, va_library, va_death, ok_ACS, ok_county_health_rankings, ok_kids_count, ok_migration, ok_library, ok_death, va_independent_cities, va_city_county_overlap)
+rm(va_ACS, va_county_health_rankings, va_kids_count, va_migration, va_library, va_death, va_voting, ok_ACS, ok_county_health_rankings, ok_kids_count, ok_migration, ok_library, ok_death, ok_voting, va_independent_cities, va_city_county_overlap)
 
 
 va_counties <- va_indicators %>%
-  filter(county %in% c("Stafford County", "Spotsylvania County", "Hanover County", "King William County", "King and Queen County", "Essex County", "King George County", "Caroline County"))
+  filter(county %in% c("Stafford County", "Spotsylvania County", "Hanover County", "King William County", "King and Queen County", "Essex County", "King George County", "Caroline County"))%>%
+  inner_join(worship_fast_food, by = "county")%>%
+  mutate(church_rate = (num_places_of_worship/population)*100000, fast_food_rate = (num_fast_food/population)*100000, liquor_store_rate = (num_liquor_stores/population)*100000)%>%
+  select(-c("num_places_of_worship", "num_fast_food", "num_liquor_stores"))
 
 ok_counties <- ok_indicators %>%
-  filter(county %in% c("Caddo County", "Grady County", "Stephens County", "Cotton County", "Tillman County", "Kiowa County", "Comanche County"))
+  filter(county %in% c("Caddo County", "Grady County", "Stephens County", "Cotton County", "Tillman County", "Kiowa County", "Comanche County"))%>%
+  inner_join(worship_fast_food, by = "county")%>%
+  mutate(church_rate = (num_places_of_worship/population)*100000, fast_food_rate = (num_fast_food/population)*100000, liquor_store_rate = (num_liquor_stores/population)*100000)%>%
+  select(-c("num_places_of_worship", "num_fast_food", "num_liquor_stores"))
 
 #skim(ok_indicators)
 ```
@@ -510,14 +533,17 @@ neg_indicators <- va_indicators %>%
 
 
 
-row_ranks <- sapply(va_counties, function(vec) rank(-vec))
+#row_ranks <- sapply(va_counties, function(vec) rank(-vec))
 
 pos_rank <- sapply(pos_indicators, function(vec) rank(vec))
 neg_rank <- sapply(neg_indicators, function(vec) rank(-vec))
 
 #row_ranks <- as.data.frame(row_ranks)
 
-va_indicators_2 <- cbind(va_indicators, rank(-rowSums(as.data.frame(cbind(pos_rank, neg_rank)))))
+va_rankings <- cbind(va_indicators, rank(-rowSums(as.data.frame(cbind(pos_rank, neg_rank)))))%>%
+  select(county, `rank(-rowSums(as.data.frame(cbind(pos_rank, neg_rank))))`)
+names(va_rankings) <- c("county", "rank")
+va_rankings <- va_rankings[order(va_rankings$rank),]
 
 ```
 
