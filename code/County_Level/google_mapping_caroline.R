@@ -72,6 +72,14 @@ df2 <- df %>%
             county_name = unlist(county_name))
 fwrite(df2, "/home/jk9ra/ari_social_media/data/working/County_Level/churchs_fast_good_liquor.csv")
 
-churches_food <- map_df(.x = counties, .f = function(county) {
-  map2_df(.x = county, .y = queries, .f = get_query)
-})
+# churches_food <- map_df(.x = counties, .f = function(county) {
+#   map2_df(.x = county, .y = queries, .f = get_query)
+# })
+
+
+food_churches <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/churchs_fast_good_liquor.csv")%>%
+  mutate(type = ifelse(type != "liquor store" & type != "fast food", "place of worship", type))
+
+food_churches <- unique(food_churches)
+
+write_csv(food_churches, "/home/jk9ra/ari_social_media/data/working/County_Level/places_of_worship_fast_food_liquor.csv")
