@@ -1,0 +1,19 @@
+---
+title: "County Factors Regression"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(car)
+```
+
+```{r}
+county_indicators <- rbind(ok_indicators, va_indicators)
+
+write_csv(county_indicators, "/home/jk9ra/ari_social_media/data/final/county_level_indicators.csv")
+
+mod <- lm(pct_stayed~., data = county_indicators)
+
+
+```
