@@ -12,7 +12,7 @@
 #install.packages("RColorBrewer") # color palettes
 #install.packages("SentimentAnalysis")
 
-==========
+
 
 library(jsonlite)
 library(tidyverse)
@@ -49,8 +49,6 @@ top200_words <- freq_terms(entries, 200, at.least=4, stopwords = c("didnt", "don
 top200_words
 
 
-#create word cloud of top 200 words
-=======
 #count of top 100 words
 top100_words <- freq_terms(entries, 100, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
 top100_words
@@ -61,8 +59,6 @@ wordcloud(words = top200_words$WORD, freq = top200_words$FREQ, min.freq = 1,
           max.words=200, random.order=FALSE, rot.per=0.35, 
           colors=brewer.pal(8, "RdYlBu"))
 
-
-=======
 
 #join bing library of words and their associated sentiments
 bing <- get_sentiments("bing")
