@@ -95,6 +95,8 @@ ok_county <- subset(counties, region == 'oklahoma')
 
 food_churches$type <- as.factor(food_churches$type)
 
+
+#merging created database with database of army posts
 bases <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/military-bases.xlsx")
 
 to_merge_bases <- bases %>%
@@ -117,6 +119,7 @@ va_churches_et_al <- merged_bases_churches%>%
 ok_churches_et_al <- merged_bases_churches %>%
   filter(lat < 36.5)
 
+#map for virginia
 va_map <- ggplot() +
   theme_void() +
   geom_polygon(data = va_county, aes(x=long, y=lat, group = group), size = 1, fill = NA, color = "dark gray") + 
@@ -124,6 +127,8 @@ va_map <- ggplot() +
   scale_color_viridis(discrete = TRUE)
 va_map
 
+
+#map for oklahoma
 ok_map <- ggplot() +
   theme_void() +
   geom_polygon(data = ok_county, aes(x=long, y=lat, group = group), size = 1, fill = NA, color = "dark gray") + 
