@@ -21,7 +21,8 @@ library(tm)
 library(qdap)
 library(wordcloud)
 library(RColorBrewer)
-library(SentimentAnalysis)
+#library(SentimentAnalysis)
+library(sentimentr)
 
 setwd("~/ari_social_media/data/working/Blogs")
 #read in data, remove all carriage returns from the "entry" column (body of blog text)
@@ -48,6 +49,10 @@ top50_words
 top200_words <- freq_terms(entries, 200, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
 top200_words
 
+<<<<<<< HEAD
+=======
+#create word cloud of top 200 words
+>>>>>>> e7832372b82d18cab88a3ae62fbd2ebf848f7594
 
 #count of top 100 words
 top100_words <- freq_terms(entries, 100, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
@@ -131,3 +136,11 @@ mental_health <- entries2[grepl("mental health", entries2$tag),]
 sentiment <- analyzeSentiment(mental_health$text)
 mental_health_sentiment <- convertToDirection(sentiment$SentimentQDAP)
 plot(mental_health_sentiment)
+
+#attempt to use sentimentr package instead
+#This code takes the first post, splits it into a vector of its sentences, then finds the sentiment of each sentence.
+example_post <- get_sentences(entries2[1,1])
+example_post_sentiment <- sentiment(example_post)
+mean(example_post_sentiment$sentiment)
+
+
