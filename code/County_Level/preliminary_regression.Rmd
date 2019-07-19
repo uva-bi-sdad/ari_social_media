@@ -1,0 +1,86 @@
+---
+title: "County Factors Regression"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(car)
+library(tidyverse)
+```
+
+```{r}
+county_indicators <- rbind(ok_indicators, va_indicators)
+
+indicators_2 <- county_indicators %>%
+  dplyr::select(-c(county, pct_renter_occupied_homes, pct_moved_after_2014,  pct_moved_2010_2014, pct_moved_2000_2009, pct_moved_1990_1999, pct_moved_1980_1989, pct_moved_1979_earlier, pct_movers_within_county, pct_health_ins, pct_college_or_higher))
+
+```
+
+```{r}
+
+library(DataExplorer)
+plot_missing(indicators_2)
+
+plot_histogram(indicators_2)
+
+plot_density(indicators_2)
+```
+
+
+
+```{r}
+
+
+
+#write_csv(county_indicators, "/home/jk9ra/ari_social_media/data/final/county_level_indicators.csv")
+
+
+options(max.print=999999)
+pls_work <- round(cor(indicators_2, use = "pair"), 2)
+
+write.table(pls_work, "correlation_matrix.txt", sep="\t")
+
+
+cor.mat <- (round(cor(indicators_2),2))
+library("corrplot")
+corrplot(pls_work, type="upper",  order="hclust",
+         tl.col="black", tl.cex = 0.7, tl.srt = 45)
+
+```
+
+
+```{r}
+library(psych)
+fit <- principal(indicators_2, nfactors=68, rotate="varimax")
+fit # print results
+
+# Pricipal Components Analysis
+# entering raw data and extracting PCs
+# from the correlation matrix
+fit <- princomp(indicators_2, cor=TRUE)
+summary(fit) # print variance accounted for
+loadings(fit) # pc loadings
+plot(fit,type="lines") # scree plot
+fit$scores # the principal components
+biplot(fit) 
+
+library(leaps)
+
+
+models <- regsubsets(pct_stayed~., data = indicators_2, nvmax = 56, nbest=1, really.big=T)
+
+summary(models)
+
+indicators_3 <- indicators_2 %>%
+  dplyr::select(-c(child_abuse_rate, lib_hours_per_person, lib_visit_rate, death_rate, median_income_black, median_income_hispanic, pcp_ratio, pct_lib_patrons, pct_lib_program_atten, preventable_hosp_rate, segregation_black_white, segregation_white_non, teen_birth_rate, water_violations))
+
+library(MASS)
+# Fit the full model 
+full.model <- lm(pct_stayed ~., data = indicators_3)
+# Stepwise regression model
+step.model <- stepAIC(full.model, direction = "both", 
+                      trace = FALSE)
+summary(step.model)
+
+```
