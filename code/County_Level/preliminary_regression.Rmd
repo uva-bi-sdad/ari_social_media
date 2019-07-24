@@ -9,38 +9,21 @@ library(car)
 library(tidyverse)
 library(DataExplorer)
 library(corrplot)
+library(mice)
 ```
 
 ```{r}
-county_indicators <- rbind(ok_indicators, va_indicators)
-
-indicators_2 <- county_indicators %>%
+indicators <- read_csv("~/ari_social_media/data/working/County_Level/county_level_indicators.csv") %>%
   dplyr::select(-c(county, pct_renter_occupied_homes, pct_moved_after_2014,  pct_moved_2010_2014, pct_moved_2000_2009, pct_moved_1990_1999, pct_moved_1980_1989, pct_moved_1979_earlier, pct_movers_within_county, pct_health_ins, pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person, water_violations))
 
 ```
 
 ```{r}
-plot_missing(indicators_2)
+plot_missing(indicators)
+plot_histogram(indicators)
+plot_density(indicators)
 
-plot_histogram(indicators_2)
-
-plot_density(indicators_2)
-```
-
-```{r}
-library("mice")
-
-imputed <- mice(indicators_2)
-
-plot_missing(imputed$data)
-
-plot_histogram(complete(imputed))
-```
-
-```{r}
-
-
-missing_indicators <- indicators_2 %>%
+missing_indicators <- indicators %>%
   mutate(missing_hispanic_income = ifelse(is.na(median_income_hispanic), 1, 0),
          missing_income_black = ifelse(is.na(median_income_black), 1, 0),
          missing_bw_segregation = ifelse(is.na(segregation_black_white), 1, 0),
@@ -49,18 +32,24 @@ missing_indicators <- indicators_2 %>%
          missing_death_rate = ifelse(is.na(death_rate), 1, 0),
          missing_prev_hosp = ifelse(is.na(preventable_hosp_rate), 1, 0))
 
+missing_corr_plot <- round(cor(missing_indicators, use = "pair"), 2)
 
-
-options(max.print=999999)
-pls_work <- round(cor(missing_indicators, use = "pair"), 2)
-
-write.table(pls_work, "correlation_matrix.txt", sep="\t")
-
-
-corrplot(pls_work,
+corrplot(missing_corr_plot,
          tl.col="black", tl.cex = 0.7, tl.srt = 45)
-
 ```
+
+```{r}
+indicators_2 <- indicators %>%
+  dplyr::select(-c(pct_reg_voted, pct_less_than_hs))
+
+imputed <- mice(indicators_2, method = "pmm")
+
+complete_indicators <- complete(imputed)
+
+#plot_missing(complete_indicators)
+```
+
+
 
 ```{r}
 indicators_dropped_cols <- indicators_2 %>%
