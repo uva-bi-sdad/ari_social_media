@@ -1,0 +1,116 @@
+---
+title: "County Factors Regression"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(car)
+library(tidyverse)
+library(DataExplorer)
+library(corrplot)
+```
+
+```{r}
+county_indicators <- rbind(ok_indicators, va_indicators)
+
+indicators_2 <- county_indicators %>%
+  dplyr::select(-c(county, pct_renter_occupied_homes, pct_moved_after_2014,  pct_moved_2010_2014, pct_moved_2000_2009, pct_moved_1990_1999, pct_moved_1980_1989, pct_moved_1979_earlier, pct_movers_within_county, pct_health_ins, pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person, water_violations))
+
+```
+
+```{r}
+plot_missing(indicators_2)
+
+plot_histogram(indicators_2)
+
+plot_density(indicators_2)
+```
+
+```{r}
+library("mice")
+
+imputed <- mice(indicators_2)
+
+plot_missing(imputed$data)
+
+plot_histogram(complete(imputed))
+```
+
+```{r}
+
+
+missing_indicators <- indicators_2 %>%
+  mutate(missing_hispanic_income = ifelse(is.na(median_income_hispanic), 1, 0),
+         missing_income_black = ifelse(is.na(median_income_black), 1, 0),
+         missing_bw_segregation = ifelse(is.na(segregation_black_white), 1, 0),
+         missing_pcp = ifelse(is.na(pcp_ratio), 1, 0),
+         missing_nw_segregation = ifelse(is.na(segregation_white_non), 1, 0),
+         missing_death_rate = ifelse(is.na(death_rate), 1, 0),
+         missing_prev_hosp = ifelse(is.na(preventable_hosp_rate), 1, 0))
+
+
+
+options(max.print=999999)
+pls_work <- round(cor(missing_indicators, use = "pair"), 2)
+
+write.table(pls_work, "correlation_matrix.txt", sep="\t")
+
+
+corrplot(pls_work,
+         tl.col="black", tl.cex = 0.7, tl.srt = 45)
+
+```
+
+```{r}
+indicators_dropped_cols <- indicators_2 %>%
+  dplyr::select(-c(pct_black, pct_native, pct_asian, pct_pacific_islander, pct_race_other, pct_hispanic_latinx, pct_private_health_ins, pct_public_health_ins, pct_some_college, pct_associates, pct_bachelors, pct_grad_degree, pct_hs_or_higher, pct_less_than_hs, pct_attained_hs, pct_fair_poor_health, pct_children_poverty, pct_food_insecure, median_income_white, median_income_black, median_income_hispanic, pct_child_food_insecure, pct_commute_drive, pct_commute_carpool, pct_commute_public, pct_commute_walk, pct_commute_other, pct_work_home, severe_housing_problems))
+
+
+cor_matrix <- round(cor(indicators_dropped_cols, use = "pair"), 2)
+
+#write.table(cor_matrix, "correlation_matrix.txt", sep="\t")
+
+corrplot(cor_matrix,
+         tl.col="black", tl.cex = 0.7, tl.srt = 45)
+
+mod <- lm(pct_stayed~., data = indicators_dropped_cols)
+
+car::vif(mod)
+```
+
+
+```{r}
+library(psych)
+fit <- principal(indicators_2, nfactors=68, rotate="varimax")
+fit # print results
+
+# Pricipal Components Analysis
+# entering raw data and extracting PCs
+# from the correlation matrix
+fit <- princomp(indicators_2, cor=TRUE)
+summary(fit) # print variance accounted for
+loadings(fit) # pc loadings
+plot(fit,type="lines") # scree plot
+fit$scores # the principal components
+biplot(fit) 
+
+library(leaps)
+
+
+models <- regsubsets(pct_stayed~., data = indicators_2, nvmax = 56, nbest=1, really.big=T)
+
+summary(models)
+
+indicators_3 <- indicators_2 %>%
+  dplyr::select(-c(child_abuse_rate, lib_hours_per_person, lib_visit_rate, death_rate, median_income_black, median_income_hispanic, pcp_ratio, pct_lib_patrons, pct_lib_program_atten, preventable_hosp_rate, segregation_black_white, segregation_white_non, teen_birth_rate, water_violations))
+
+library(MASS)
+# Fit the full model 
+full.model <- lm(pct_stayed ~., data = indicators_3)
+# Stepwise regression model
+step.model <- stepAIC(full.model, direction = "both", 
+                      trace = FALSE)
+summary(step.model)
+
+```
