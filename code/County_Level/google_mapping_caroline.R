@@ -14,6 +14,7 @@ library(tidyr)
 library(purrr)
 library(readr)
 library(viridis)
+library(readxl)
 
 queries <- c("fast+food", "catholic+church", "kingdom+hall+of+jehovas+witnesses", "apostolic", "baptist", "episcopal", "lutheran", "christian+center", "pentecostal", "presbyterian", "methodist", "synagogue", "temple", "liquor+store", "church")
 counties <- c("Caroline+County+Virginia", "King+George+County+Virginia", "Stafford+County+Virginia", "Spotsylvania+County+Virginia", "Hanover+County+Virginia", "King+William+County+Virginia", "King+and+Queen+County+Virginia", "Essex+County+Virginia", "Comanche+County+Oklahoma", "Cotton+County+Oklahoma", "Stephens+County+Oklahoma", "Grady+County+Oklahoma", "Caddo+County+Oklahoma", "Kiowa+County+Oklahoma", "Tillman+County+Oklahoma")
@@ -87,10 +88,12 @@ food_churches <- unique(food_churches)
 
 
 ##Creating maps of places of worship, fast food locations, and liquor stores for focus counties in Virginia and Oklahoma
-us_map
 
 counties <- map_data("county")
 va_county <- subset(counties, region == 'virginia')
+va_county_list <- c('caroline', 'king george', 'stafford', 'spotsylvania', 'hanover', 'king william', 'king and queen', 'essex')
+va_county_zoom <- subset(va_county, subregion %in% va_county_list)
+
 ok_county <- subset(counties, region == 'oklahoma')
 
 food_churches$type <- as.factor(food_churches$type)
@@ -102,9 +105,7 @@ bases <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/mili
 to_merge_bases <- bases %>%
   mutate(lat = as.numeric(str_extract(`Geo Point`, ".+?(?=,)")),
          lon = as.numeric(str_extract(`Geo Point`, "[^,]+$"))) %>%
-  filter(`Oper Stat` == "Active") %>%
-  filter(COMPONENT == "Army Active") %>%
-  filter(`State Terr` == "Virginia" | `State Terr` == "Oklahoma")%>%
+  filter(`Site Name` == "Fort A P Hill" | `Site Name` == "Fort Sill")%>%
   select("COMPONENT", "Site Name", "lat", "lon")
 names(to_merge_bases) <- c("type", "name", "lat", "lng")
 
@@ -127,6 +128,12 @@ va_map <- ggplot() +
   scale_color_viridis(discrete = TRUE)
 va_map
 
+va_map_zoom <- ggplot()+
+  theme_void() +
+  geom_polygon(data = va_county_zoom, aes(x=long, y=lat, group = group), size = 1, fill = NA, color = "dark gray") + 
+  geom_point(aes(lng, lat, color = type), alpha = 0.8, data = va_churches_et_al)+
+  scale_color_viridis(discrete = TRUE)
+va_map_zoom
 
 #map for oklahoma
 ok_map <- ggplot() +
