@@ -20,7 +20,6 @@ indicators_3 <- drop_na(indicators_2)
 
 county_scale <- prcomp(indicators_3, scale=TRUE, center=TRUE)
 View(county_scale)
-summary(county_scale)
 
 biplot(county_scale)
 par("mar")
@@ -80,3 +79,4 @@ library("factoextra")
 fviz_screeplot(res.pca, ncp=10)
 res.pca$var$contrib
 fviz_pca_contrib(pr.indicators, choice = "var", axes = 2)
+
