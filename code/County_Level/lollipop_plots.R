@@ -20,6 +20,9 @@ data_virginia$incomesmall <- data_virginia$median_income / 1000
 data_virginia2 <- melt(data_virginia %>% select(county, incomesmall, pct_no_health_ins, pct_impoverished,
                                                 pct_renter_occupied_homes, pct_unemployed, severe_housing_problems))
 
+data_virginia2$county <- factor(data_virginia2$county, levels = c("Caroline County", "Stafford County", "Spotsylvania County", "King William County", "King George County", "King and Queen County", "Hanover County", "Essex County"))
+
+
 # converting percentages to number of people to convert back to % of all Virginians to use for dashed line
 data_all_va <- data[1:133,]
 total_va_population <- sum(data_all_va$population)
@@ -73,7 +76,7 @@ plot_virginia <- ggplot(data_virginia2, aes(x=county, y=value)) +
     axis.title.x=element_blank(),
     axis.title.y=element_blank(),
     axis.text.x=element_text(size=15),
-    axis.text.y=element_text(size=15, colour = "#232D4B")
+    axis.text.y=element_text(size=15, colour = c("#fdb863", rep("#232D4B", 7)))
   )
 plot_virginia
 
