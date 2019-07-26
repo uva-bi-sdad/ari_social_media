@@ -14,7 +14,7 @@ library(mice)
 
 ```{r}
 indicators <- read_csv("~/ari_social_media/data/working/County_Level/county_level_indicators.csv") %>%
-  dplyr::select(-c(county, pct_renter_occupied_homes, pct_moved_after_2014,  pct_moved_2010_2014, pct_moved_2000_2009, pct_moved_1990_1999, pct_moved_1980_1989, pct_moved_1979_earlier, pct_movers_within_county, pct_health_ins))
+  dplyr::select(-c(pct_renter_occupied_homes, pct_moved_after_2014,  pct_moved_2010_2014, pct_moved_2000_2009, pct_moved_1990_1999, pct_moved_1980_1989, pct_moved_1979_earlier, pct_movers_within_county, pct_health_ins))
 
 ```
 
@@ -22,7 +22,7 @@ indicators <- read_csv("~/ari_social_media/data/working/County_Level/county_leve
 plot_missing(indicators)
 
 missing_indicators <- indicators %>%
-  select(-c(pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person, water_violations))%>%
+  select(-c(county, pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person, water_violations))%>%
   mutate(missing_hispanic_income = ifelse(is.na(median_income_hispanic), 1, 0),
          missing_income_black = ifelse(is.na(median_income_black), 1, 0),
          missing_bw_segregation = ifelse(is.na(segregation_black_white), 1, 0),
@@ -39,7 +39,7 @@ corrplot(missing_corr_plot,
 
 ```{r}
 indicators_2 <- indicators %>%
-  dplyr::select(-c(pct_reg_voted, pct_less_than_hs))
+  dplyr::select(-c(pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person, water_violations, pct_reg_voted, pct_less_than_hs))
 
 imputed <- mice(indicators_2, method = "pmm")
 
