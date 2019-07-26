@@ -89,6 +89,11 @@ food_churches <- unique(food_churches)
 
 
 ##Creating maps of places of worship, fast food locations, and liquor stores for focus counties in Virginia and Oklahoma
+<<<<<<< HEAD
+#us_map
+
+=======
+>>>>>>> 2ddeff8aa396c7a838dd8f15c57d5db9af06d166
 counties <- map_data("county")
 va_county <- subset(counties, region == 'virginia')
 va_county_list <- c('caroline', 'king george', 'stafford', 'spotsylvania', 'hanover', 'king william', 'king and queen', 'essex')
