@@ -89,10 +89,16 @@ food_churches <- unique(food_churches)
 
 
 ##Creating maps of places of worship, fast food locations, and liquor stores for focus counties in Virginia and Oklahoma
+<<<<<<< HEAD
 #us_map
 
+=======
+>>>>>>> 2ddeff8aa396c7a838dd8f15c57d5db9af06d166
 counties <- map_data("county")
 va_county <- subset(counties, region == 'virginia')
+va_county_list <- c('caroline', 'king george', 'stafford', 'spotsylvania', 'hanover', 'king william', 'king and queen', 'essex')
+va_county_zoom <- subset(va_county, subregion %in% va_county_list)
+
 ok_county <- subset(counties, region == 'oklahoma')
 
 food_churches$type <- as.factor(food_churches$type)
@@ -104,9 +110,7 @@ bases <- read_excel("~/ari_social_media/data/working/County_Level/military-bases
 to_merge_bases <- bases %>%
   mutate(lat = as.numeric(str_extract(`Geo Point`, ".+?(?=,)")),
          lon = as.numeric(str_extract(`Geo Point`, "[^,]+$"))) %>%
-  filter(`Oper Stat` == "Active") %>%
-  filter(COMPONENT == "Army Active") %>%
-  filter(`State Terr` == "Virginia" | `State Terr` == "Oklahoma")%>%
+  filter(`Site Name` == "Fort A P Hill" | `Site Name` == "Fort Sill")%>%
   select("COMPONENT", "Site Name", "lat", "lon")
 names(to_merge_bases) <- c("type", "name", "lat", "lng")
 
@@ -129,6 +133,12 @@ va_map <- ggplot() +
   scale_color_viridis(discrete = TRUE)
 va_map
 
+va_map_zoom <- ggplot()+
+  theme_void() +
+  geom_polygon(data = va_county_zoom, aes(x=long, y=lat, group = group), size = 1, fill = NA, color = "dark gray") + 
+  geom_point(aes(lng, lat, color = type), alpha = 0.8, data = va_churches_et_al)+
+  scale_color_viridis(discrete = TRUE)
+va_map_zoom
 
 #map for oklahoma
 ok_map <- ggplot() +
