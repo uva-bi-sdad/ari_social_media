@@ -11,7 +11,8 @@
 #install.packages("wordcloud") # word-cloud generator 
 #install.packages("RColorBrewer") # color palettes
 #install.packages("SentimentAnalysis")
-
+#install.packages("sentimentr")
+#install.packages("lexicon")
 
 
 library(jsonlite)
@@ -23,6 +24,9 @@ library(wordcloud)
 library(RColorBrewer)
 #library(SentimentAnalysis)
 library(sentimentr)
+library(magrittr)
+library(dplyr)
+library(lexicon)
 
 setwd("~/ari_social_media/data/working/Blogs")
 #read in data, remove all carriage returns from the "entry" column (body of blog text)
@@ -41,6 +45,7 @@ entries <- entries %>%
 entries <- entries %>%
   anti_join(stop_words)
 
+
 #give us a count of the top 50 words, removing contractions that aren't included in stop_words
 top50_words <- freq_terms(entries, 50, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
 top50_words
@@ -48,11 +53,6 @@ top50_words
 #count of top 200 words
 top200_words <- freq_terms(entries, 200, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
 top200_words
-
-<<<<<<< HEAD
-=======
-#create word cloud of top 200 words
->>>>>>> e7832372b82d18cab88a3ae62fbd2ebf848f7594
 
 #count of top 100 words
 top100_words <- freq_terms(entries, 100, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
@@ -142,5 +142,17 @@ plot(mental_health_sentiment)
 example_post <- get_sentences(entries2[1,1])
 example_post_sentiment <- sentiment(example_post)
 mean(example_post_sentiment$sentiment)
+terms <- extract_sentiment_terms(example_post)
 
 
+#testing the highlight function in sentimentr with the first blog post in entries data table
+a <- entries[1,]
+a %>%
+  mutate(review = get_sentences(text)) %$%
+  sentiment_by(review) %>%
+  highlight()
+
+
+#adding in another dataset of words to add to sentimentr as a dictionary
+setwd("~/ari_social_media/data/working/Blogs")
+sentiwords <- read.table("SentiWordNet_3.0.0.txt", fill = TRUE)
