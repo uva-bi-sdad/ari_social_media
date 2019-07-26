@@ -55,5 +55,28 @@ pca_whatever$eig
 pca_whatever$eig
 
 
+pr.indicators <- prcomp(x = indicators_3[,], scale=TRUE, center=TRUE)
+summary(pr.indicators)
 
+pr.indicators$rotation
+
+
+biplot(pr.indicators)
+  
+pr.var <- pr.indicators$sdev^2
+pve <- pr.var / sum(pr.var)
+par(mfrow=c(1,2))
+plot(pve, xlab = "Principal Component",
+     ylab="Proportion of Variance Explained", ylim=c(0,1), type="b")
+plot(cumsum(pve), xlab = "Principal Component",
+     ylab="Cumulative Variance Explained", ylim=c(0,1), type="b")
+
+library("FactoMineR")
+res.pca <- PCA(indicators_3, graph = FALSE)
+eigenvalues <- res.pca$eig
+head(eigenvalues[, 1:2])
+library("factoextra")
+fviz_screeplot(res.pca, ncp=10)
+res.pca$var$contrib
+fviz_pca_contrib(pr.indicators, choice = "var", axes = 2)
 
