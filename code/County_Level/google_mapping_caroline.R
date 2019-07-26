@@ -14,6 +14,7 @@ library(tidyr)
 library(purrr)
 library(readr)
 library(viridis)
+library(ggplot2)
 library(readxl)
 
 queries <- c("fast+food", "catholic+church", "kingdom+hall+of+jehovas+witnesses", "apostolic", "baptist", "episcopal", "lutheran", "christian+center", "pentecostal", "presbyterian", "methodist", "synagogue", "temple", "liquor+store", "church")
@@ -79,7 +80,7 @@ fwrite(df2, "/home/jk9ra/ari_social_media/data/working/County_Level/churchs_fast
 # })
 
 
-food_churches <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/churchs_fast_good_liquor.csv")%>%
+food_churches <- read_csv("~/ari_social_media/data/working/County_Level/churchs_fast_good_liquor.csv")%>%
   mutate(type = ifelse(type != "liquor store" & type != "fast food", "place of worship", type))
 
 food_churches <- unique(food_churches)
@@ -88,7 +89,11 @@ food_churches <- unique(food_churches)
 
 
 ##Creating maps of places of worship, fast food locations, and liquor stores for focus counties in Virginia and Oklahoma
+<<<<<<< HEAD
+#us_map
 
+=======
+>>>>>>> 2ddeff8aa396c7a838dd8f15c57d5db9af06d166
 counties <- map_data("county")
 va_county <- subset(counties, region == 'virginia')
 va_county_list <- c('caroline', 'king george', 'stafford', 'spotsylvania', 'hanover', 'king william', 'king and queen', 'essex')
@@ -100,7 +105,7 @@ food_churches$type <- as.factor(food_churches$type)
 
 
 #merging created database with database of army posts
-bases <- read_excel("/home/jk9ra/ari_social_media/data/working/County_Level/military-bases.xlsx")
+bases <- read_excel("~/ari_social_media/data/working/County_Level/military-bases.xlsx")
 
 to_merge_bases <- bases %>%
   mutate(lat = as.numeric(str_extract(`Geo Point`, ".+?(?=,)")),
