@@ -54,12 +54,15 @@
 # pca_whatever$eig
 # pca_whatever$eig
 
-
-pr.indicators <- prcomp(x = complete_indicators[,], scale=TRUE, center=TRUE)
+complete_indicators_2 <- complete_indicators %>%
+  select(-c(county))
+library(BBmisc)
+complete_indicators_3 <- normalize(complete_indicators_2, method = "standardize")
+pr.indicators <- prcomp(x = complete_indicators_2[,], scale=TRUE, center=TRUE)
 summary(pr.indicators)
 
 pr.indicators$rotation
-
+write.table(pr.indicators$rotation, "pca_rotation.txt", sep="\t")
 
 biplot(pr.indicators)
   
@@ -72,11 +75,24 @@ plot(cumsum(pve), xlab = "Principal Component",
      ylab="Cumulative Variance Explained", ylim=c(0,1), type="b")
 
 library("FactoMineR")
-res.pca <- PCA(complete_indicators, graph = FALSE)
+res.pca <- PCA(complete_indicators_3, graph = FALSE)
 eigenvalues <- res.pca$eig
-head(eigenvalues[, 1:2])
+eigenvalues[, 1:3]
 library("factoextra")
 fviz_screeplot(res.pca, ncp=10)
 res.pca$var$contrib
+
+write.table(res.pca$var$contrib, "pca_contribution.txt", sep="\t")
+
+fviz_contrib(pr.indicators, choice = "var", axes = 1)
 fviz_contrib(pr.indicators, choice = "var", axes = 1)
 
+
+
+pr.indicators <- prcomp(x = selected_indicators_best[,], scale=TRUE, center=TRUE)
+summary(pr.indicators)
+
+pr.indicators$rotation
+#write.table(pr.indicators$rotation, "pca_rotation.txt", sep="\t")
+
+biplot(pr.indicators)
