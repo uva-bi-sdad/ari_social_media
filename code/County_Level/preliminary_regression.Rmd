@@ -145,6 +145,8 @@ selected_corr_plot <- round(cor(selected_10, use = "pair"), 2)
 
 corrplot(selected_corr_plot,
          tl.col="black", tl.cex = 0.7, tl.srt = 45)
+
+summary(lm(scale(pct_stayed)~scale(pct_commute_drive)+scale(commute_time_mean)+scale(median_income)+scale(income_ratio)+scale(air_pollution)+scale(pct_white)+scale(segregation_white_non)+scale(population)+scale(pct_rural)+scale(pct_voted), data = selected_10))
 ```
 
 ```{r}
