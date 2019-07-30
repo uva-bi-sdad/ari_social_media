@@ -146,3 +146,13 @@ selected_corr_plot <- round(cor(selected_10, use = "pair"), 2)
 corrplot(selected_corr_plot,
          tl.col="black", tl.cex = 0.7, tl.srt = 45)
 ```
+
+```{r}
+selected_10_no_y <- selected_10 %>%
+  dplyr::select(-c(pct_stayed))
+
+pr.indicators <- prcomp(x = selected_10_no_y[,], scale=TRUE, center=TRUE)
+
+biplot(pr.indicators, col = c("white", "black"))
+
+```
