@@ -147,7 +147,22 @@ corrplot(selected_corr_plot,
          tl.col="black", tl.cex = 0.7, tl.srt = 45)
 
 summary(lm(scale(pct_stayed)~scale(pct_commute_drive)+scale(commute_time_mean)+scale(median_income)+scale(income_ratio)+scale(air_pollution)+scale(pct_white)+scale(segregation_white_non)+scale(population)+scale(pct_rural)+scale(pct_voted), data = selected_10))
+
+
+
 ```
+
+```{r}
+
+embeddedness_no_county <- selected_10 %>%
+  mutate(embeddedness = .2715*scale(pct_commute_drive)+.2192*scale(commute_time_mean)-.4399*scale(median_income)-.1851*scale(income_ratio)+.1279*scale(air_pollution)+.1552*scale(pct_white)+.1302*scale(segregation_white_non)+.2676*scale(population)+.3267*scale(pct_rural)+.1623*scale(pct_voted))
+
+county_embeddedness <- cbind(indicators$county, embeddedness_no_county)
+
+write_csv(county_embeddedness, "~/ari_social_media/data/final/county_embeddedness.csv")
+
+```
+
 
 ```{r}
 selected_10_no_y <- selected_10 %>%

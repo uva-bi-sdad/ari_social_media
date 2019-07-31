@@ -1,0 +1,35 @@
+---
+title: "final visuals"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+```
+
+
+
+```{r}
+embeddedness <- read_csv("~/ari_social_media/data/final/county_embeddedness.csv")
+
+counties <- map_data("county")
+va_county <- subset(counties, region == 'virginia')%>%
+  
+
+va_map <- ggplot() +
+  theme_void() +
+  geom_polygon(data = va_county, aes(x=long, y=lat, group = group), size = 1, fill = NA, color = "dark gray") + 
+  geom_point(aes(lng, lat, color = type), alpha = 0.8, data = va_churches_et_al)+
+  scale_color_viridis(discrete = TRUE)
+va_map
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
