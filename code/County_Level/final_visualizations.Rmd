@@ -5,31 +5,137 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(readr)
+library(readxl)
+library(dplyr)
+library(tidyverse)
 ```
 
 
 
 ```{r}
 embeddedness <- read_csv("~/ari_social_media/data/final/county_embeddedness.csv")
+colnames(embeddedness) <- c("county")
 
 counties <- map_data("county")
+
+va_independent_cities <- c("Alexandria", "Bristol", "Buena Vista", "Charlottesville", "Chesapeake", "Colonial Heights", "Covington", "Danville", "Emporia", "Fairfax City", "Falls Church", "Franklin", "Fredericksburg", "Galax", "Hampton", "Harrisonburg", "Hopewell", "Lexington", "Lynchburg", "Manassas", "Manassas Park", "Martinsville", "Newport News", "Norfolk", "Norton", "Petersburg", "Poquoson", "Portsmouth", "Radford", "Richmond", "Roanoke", "Salem", "Staunton", "Suffolk", "Virginia Beach", "Waynesboro", "Williamsburg", "Winchester")
+
+va_city_county_overlap <- c("Charles City", "James City", "Franklin", "Richmond", "Roanoke")
+
+clean_county_names <- function(county_level_data){
+  county_level_data <- county_level_data %>%
+    mutate(subregion = tolower(as.character(subregion)))%>%
+    mutate(subregion = tools::toTitleCase(as.character(subregion)))%>%
+    mutate(subregion = ifelse(subregion %in% va_city_county_overlap, str_c(as.character(subregion), "County", sep = " "),
+                           ifelse(subregion == "City of Suffolk", "Suffolk City", 
+                                  ifelse(str_detect(subregion, "City") | str_detect(subregion, "County"), as.character(subregion),
+                                         ifelse(subregion %in% va_independent_cities, str_c(as.character(subregion), "City", sep = " "), str_c(as.character(subregion), "County", sep = " "))))))  
+}
+
 va_county <- subset(counties, region == 'virginia')%>%
-  
+  clean_county_names()%>%
+  full_join(embeddedness, by=c("subregion" = "indicators$county" ))
+
+
+
+```
+
+```{r}
+posts <- read_excel("~/ari_social_media/data/working/County_Level/military-bases.xlsx")
+
+va_posts <- posts %>%
+  mutate(lat = as.numeric(str_extract(`Geo Point`, ".+?(?=,)")),
+         lon = as.numeric(str_extract(`Geo Point`, "[^,]+$"))) %>%
+  filter(COMPONENT == "Army Active", `State Terr` == "Virginia")%>%
+  select("COMPONENT", "Site Name", "lat", "lon")
+#names(to_merge_bases) <- c("type", "name", "lat", "lng")
+
 
 va_map <- ggplot() +
   theme_void() +
-  geom_polygon(data = va_county, aes(x=long, y=lat, group = group), size = 1, fill = NA, color = "dark gray") + 
-  geom_point(aes(lng, lat, color = type), alpha = 0.8, data = va_churches_et_al)+
-  scale_color_viridis(discrete = TRUE)
+  geom_polygon(data = va_county, aes(x=long, y=lat, group = group, fill = embeddedness), size = 1) + 
+  scale_fill_viridis(option = "magma", direction = -1)+
+  geom_point(aes(lon, lat), color = "white", alpha = 0.8, data = va_posts)
+va_map
+
+library(viridis)
+
+
+ok_posts <- posts %>%
+  mutate(lat = as.numeric(str_extract(`Geo Point`, ".+?(?=,)")),
+         lon = as.numeric(str_extract(`Geo Point`, "[^,]+$"))) %>%
+  filter(COMPONENT == "Army Active", `State Terr` == "Oklahoma")%>%
+  select("COMPONENT", "Site Name", "lat", "lon")
+
+
+ok_county <- subset(counties, region == 'oklahoma')%>%
+  clean_county_names()%>%
+  full_join(embeddedness, by=c("subregion" = "indicators$county" ))
+
+ok_map <- ggplot() +
+  theme_void() +
+  geom_polygon(data = ok_county, aes(x=long, y=lat, group = group, fill = embeddedness), size = 1) + 
+  scale_fill_viridis(option = "magma", direction = -1)+
+  geom_point(aes(lon, lat), color = "white", alpha = 0.8, data = ok_posts)
+ok_map
+
 va_map
 ```
 
-## Including Plots
+## Mosiac
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+cat <- c("income", "income", "rural", "rural", "rural", "commute", "urban", "urban", "urban", "voted")
+name <- c("median income", "income ratio", "percent rural", "percent white", "percent drive to work", "commute time mean", "population", "segregation", "air pollution", "percent voted")
+percent <- c(19.247, 8.099, 14.249, 6.790, 11.879, 9.590, 11.708, 5.697, 5.596, 7.101)
+
+weights <- data.frame(cat, name, percent)
+weights$percent <- as.numeric(weights$percent)
+
+library(ggmosaic)
+ggplot(data = weights) + geom_mosaic(aes(weight = as.numeric(percent), x= cat, fill = name))+
+  scale_fill_manual(c= "")
+```
+
+
+```{r}
+library(viridis)
+
+library(treemap)
+
+  
+  treemap(weights, index = c("cat", "name"), vSize = "percent")
+
+library(ggraph)
+
+vertices = data.frame(
+  name = unique(c(as.character(weights$cat), as.character(weights$name))) , 
+  value = runif(15)
+) 
+  
+library(igraph)
+
+mygraph <- graph_from_data_frame(weights, vertices=vertices)
+
+ggraph(weights, layout = 'dendrogram', circular = "false") + 
+  geom_edge_diagonal() +
+  geom_node_text(aes(label=name, filter=leaf, color=cat) , angle=90 , hjust=1, nudge_y=-0.1) +
+  geom_node_point(aes(filter=leaf, size=percent, color=cat) , alpha=0.6) +
+  ylim(-.6, NA) +
+  theme(legend.position="none")
+
+ggplot(data = weights) + geom_mosaic(aes(weight = as.numeric(percent), x= cat, fill = name))
+```
+
+```{r}
+
+va_county <- c("Stafford County", "Spotsylvania County", "Hanover County", "King William County", "King and Queen County", "Essex County", "King George County", "Caroline County")
+
+va_bar_chart <- embeddedness %>%
+  filter(`indicator$county` %in% va_county)
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
