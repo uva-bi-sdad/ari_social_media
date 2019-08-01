@@ -22,7 +22,7 @@ indicators <- read_csv("~/ari_social_media/data/working/County_Level/county_leve
 plot_missing(indicators)
 
 missing_indicators <- indicators %>%
-  select(-c(county, pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person, water_violations))%>%
+  dplyr::select(-c(county, pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person, water_violations))%>%
   mutate(missing_hispanic_income = ifelse(is.na(median_income_hispanic), 1, 0),
          missing_income_black = ifelse(is.na(median_income_black), 1, 0),
          missing_bw_segregation = ifelse(is.na(segregation_black_white), 1, 0),
@@ -38,69 +38,140 @@ corrplot(missing_corr_plot,
 ```
 
 ```{r}
+#remove all variables with more than 20% missing, as well as water violations (appears to be missing not at random), and percent registered voted and percent less than high school (perfectly correlated with other variables)
 indicators_2 <- indicators %>%
   dplyr::select(-c(pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person, water_violations, pct_reg_voted, pct_less_than_hs))
 
+#impute missing variables
 imputed <- mice(indicators_2, method = "pmm")
-
 complete_indicators <- complete(imputed)
-
 write_csv(complete_indicators, "~/ari_social_media/data/working/County_Level/county_level_indicators_w_imputation.csv")
-
-#plot_missing(complete_indicators)
+#take out county name
+complete_indicators_2 <- complete_indicators %>%
+  dplyr::select(-c(county))
 ```
 
 
 
 ```{r}
-indicators_dropped_cols <- indicators_2 %>%
-  dplyr::select(-c(pct_black, pct_native, pct_asian, pct_pacific_islander, pct_race_other, pct_hispanic_latinx, pct_private_health_ins, pct_public_health_ins, pct_some_college, pct_associates, pct_bachelors, pct_grad_degree, pct_hs_or_higher, pct_less_than_hs, pct_attained_hs, pct_fair_poor_health, pct_children_poverty, pct_food_insecure, median_income_white, median_income_black, median_income_hispanic, pct_child_food_insecure, pct_commute_drive, pct_commute_carpool, pct_commute_public, pct_commute_walk, pct_commute_other, pct_work_home, severe_housing_problems))
+# #remove all variables that contribute to multicolinearity
+# indicators_dropped_cols <- indicators_2 %>%
+#   dplyr::select(-c(pct_black, pct_native, pct_asian, pct_pacific_islander, pct_race_other, pct_private_health_ins, pct_public_health_ins, pct_some_college, pct_associates, pct_bachelors, pct_grad_degree, pct_hs_or_higher, pct_less_than_hs, pct_attained_hs, pct_fair_poor_health, pct_children_poverty, pct_food_insecure, median_income_white, median_income_black, median_income_hispanic, pct_child_food_insecure, pct_commute_drive, pct_commute_carpool, pct_commute_public, pct_commute_walk, pct_commute_other, pct_work_home, severe_housing_problems))
+# 
+# mod <- lm(pct_stayed~., data = indicators_dropped_cols)
+# 
+# car::vif(mod)
+```
 
+```{r}
+library(car)
+#remove variables that contribute to multicollinearity
+complete_indicators_small <- complete_indicators_2 %>%
+  dplyr::select(-c(pct_black, pct_native, pct_asian, pct_pacific_islander, pct_race_other, pct_commute_carpool, pct_commute_public, pct_commute_walk, pct_commute_other, pct_work_home, pct_private_health_ins, pct_public_health_ins, pct_attained_hs, pct_some_college, pct_associates, pct_bachelors, pct_grad_degree, pct_hs_or_higher, pct_college_or_higher, median_income_white, median_income_black, median_income_hispanic, pct_child_food_insecure, segregation_black_white, pct_registered, pct_children_poverty, pct_impoverished, pct_food_insecure, pct_fair_poor_health))
 
-cor_matrix <- round(cor(indicators_dropped_cols, use = "pair"), 2)
-
-#write.table(cor_matrix, "correlation_matrix.txt", sep="\t")
-
-corrplot(cor_matrix,
-         tl.col="black", tl.cex = 0.7, tl.srt = 45)
-
-mod <- lm(pct_stayed~., data = indicators_dropped_cols)
+mod <- lm(pct_stayed~., data = complete_indicators_small)
 
 car::vif(mod)
 ```
 
+```{r}
+library(glmnet)
+# Find the best lambda using cross-validation
+set.seed(123) 
+
+cv.lasso <- cv.glmnet(model.matrix(pct_stayed~., complete_indicators_small)[,-1], complete_indicators_small$pct_stayed, alpha = 1, family = "gaussian")
+# Fit the final model on the training data
+model <- glmnet(model.matrix(pct_stayed~., complete_indicators_small)[,-1], complete_indicators_small$pct_stayed, alpha = 1, family = "gaussian",
+                lambda = cv.lasso$lambda.min)
+# Display regression coefficients
+coef(model)
+coef(cv.lasso, cv.lasso$lambda.1se)
+
+selected_indicators_lasso <- complete_indicators_small %>%
+  dplyr::select(population, pct_commute_drive, median_income, pct_owner_occupied_homes, pct_enrolled_prek, social_assoc_rate, segregation_white_non, segregation_white_non, pct_rural, pct_stayed)
+
+mod <- lm(pct_stayed~., data = selected_indicators_lasso)
+summary(mod)
+```
+
 
 ```{r}
-library(psych)
-fit <- principal(indicators_2, nfactors=68, rotate="varimax")
-fit # print results
-
-# Pricipal Components Analysis
-# entering raw data and extracting PCs
-# from the correlation matrix
-fit <- princomp(indicators_2, cor=TRUE)
-summary(fit) # print variance accounted for
-loadings(fit) # pc loadings
-plot(fit,type="lines") # scree plot
-fit$scores # the principal components
-biplot(fit) 
-
 library(leaps)
 
-
-models <- regsubsets(pct_stayed~., data = indicators_2, nvmax = 56, nbest=1, really.big=T)
+models <- regsubsets(pct_stayed ~., data = complete_indicators_small, nvmax = 10, nbest=1)
 
 summary(models)
 
-indicators_3 <- indicators_2 %>%
-  dplyr::select(-c(child_abuse_rate, lib_hours_per_person, lib_visit_rate, death_rate, median_income_black, median_income_hispanic, pcp_ratio, pct_lib_patrons, pct_lib_program_atten, preventable_hosp_rate, segregation_black_white, segregation_white_non, teen_birth_rate, water_violations))
+selected_indicators_best <- complete_indicators_small %>%
+  dplyr::select(population, pct_white, pct_commute_drive, commute_time_mean, median_income, pct_owner_occupied_homes, preventable_hosp_rate, air_pollution, segregation_white_non, pct_rural, pct_stayed)
 
-library(MASS)
-# Fit the full model 
-full.model <- lm(pct_stayed ~., data = indicators_3)
-# Stepwise regression model
-step.model <- stepAIC(full.model, direction = "both", 
-                      trace = FALSE)
-summary(step.model)
+mod2 <- lm(pct_stayed~., data = selected_indicators_best)
+summary(mod2)
+```
+
+```{r}
+model4 <- lm(pct_stayed~population+commute_time_mean+median_income+pct_owner_occupied_homes, data = complete_indicators_small)
+summary(model4)
+
+model5 <- lm(pct_stayed~population+pct_commute_drive+commute_time_mean+median_income+pct_owner_occupied_homes, data = complete_indicators_small)
+summary(model5)
+
+model6 <- lm(pct_stayed~population+pct_white+pct_commute_drive+commute_time_mean+median_income+pct_owner_occupied_homes, data = complete_indicators_small)
+summary(model6)
+
+model7 <- lm(pct_stayed~population+pct_commute_drive+median_income+pct_owner_occupied_homes+air_pollution+pct_rural+child_abuse_rate, data = complete_indicators_small)
+summary(model7)
+
+model8 <- lm(pct_stayed~population+pct_commute_drive+median_income+pct_owner_occupied_homes+air_pollution+segregation_white_non+pct_rural+child_abuse_rate, data = complete_indicators_small)
+summary(model8)
+
+model9 <- lm(pct_stayed~population+pct_commute_drive+median_income+pct_owner_occupied_homes+income_ratio+air_pollution+segregation_white_non+pct_rural+child_abuse_rate, data = complete_indicators_small)
+summary(model9)
+
+# model10 <- lm(pct_stayed~population+pct_white+pct_commute_drive+commute_time_mean+median_income+pct_owner_occupied_homes+preventable_hosp_rate+air_pollution+segregation_white_non+pct_rural, data = complete_indicators_small)
+# summary(model10)
+
+model10 <- lm(pct_stayed~population+pct_white+pct_commute_drive+commute_time_mean+median_income+income_ratio+air_pollution+segregation_white_non+pct_rural+pct_voted, data = complete_indicators_small)
+summary(model10)
+```
+
+```{r}
+summary(lm(pct_stayed~pct_commute_drive+commute_time_mean+median_income+income_ratio+air_pollution+pct_white+segregation_white_non+population+pct_rural+pct_voted, data = complete_indicators_small))
+
+selected_10 <- complete_indicators_small %>%
+  dplyr::select(population, pct_white, pct_commute_drive, commute_time_mean, median_income, income_ratio, air_pollution, segregation_white_non, pct_rural, pct_voted, pct_stayed)
+
+selected_corr_plot <- round(cor(selected_10, use = "pair"), 2)
+
+corrplot(selected_corr_plot,
+         tl.col="black", tl.cex = 0.7, tl.srt = 45)
+
+final_model <- lm(scale(pct_stayed)~scale(pct_commute_drive)+scale(commute_time_mean)+scale(median_income)+scale(income_ratio)+scale(air_pollution)+scale(pct_white)+scale(segregation_white_non)+scale(population)+scale(pct_rural)+scale(pct_voted), data = selected_10)
+
+plot(final_model, which=c(1,2))
+
+summary(final_model)
+
+```
+
+```{r}
+
+embeddedness_no_county <- selected_10 %>%
+  mutate(embeddedness = .2715*scale(pct_commute_drive)+.2192*scale(commute_time_mean)-.4399*scale(median_income)-.1851*scale(income_ratio)+.1279*scale(air_pollution)+.1552*scale(pct_white)+.1302*scale(segregation_white_non)+.2676*scale(population)+.3267*scale(pct_rural)+.1623*scale(pct_voted))
+
+county_embeddedness <- cbind(indicators$county, embeddedness_no_county)
+
+write_csv(county_embeddedness, "~/ari_social_media/data/final/county_embeddedness.csv")
+
+```
+
+
+```{r}
+selected_10_no_y <- selected_10 %>%
+  dplyr::select(-c(pct_stayed))
+
+pr.indicators <- prcomp(x = selected_10_no_y[,], scale=TRUE, center=TRUE)
+
+biplot(pr.indicators, col = c("white", "black"))
 
 ```
