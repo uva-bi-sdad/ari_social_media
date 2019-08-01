@@ -46,6 +46,7 @@ indicators_2 <- indicators %>%
 imputed <- mice(indicators_2, method = "pmm")
 complete_indicators <- complete(imputed)
 write_csv(complete_indicators, "~/ari_social_media/data/working/County_Level/county_level_indicators_w_imputation.csv")
+complete_indicators <- read_csv("~/ari_social_media/data/working/County_Level/county_level_indicators_w_imputation.csv")
 #take out county name
 complete_indicators_2 <- complete_indicators %>%
   dplyr::select(-c(county))
@@ -161,17 +162,12 @@ embeddedness_no_county <- selected_10 %>%
 
 county_embeddedness <- cbind(indicators$county, embeddedness_no_county)
 
-write_csv(county_embeddedness, "~/ari_social_media/data/final/county_embeddedness.csv")
+normalize <- function(x) {
+    return ((x - min(x)) / (max(x) - min(x)))
+  }
 
-```
+county_embeddedness$embeddedness <- as.data.frame(lapply(county_embeddedness["embeddedness"], normalize))
 
-
-```{r}
-selected_10_no_y <- selected_10 %>%
-  dplyr::select(-c(pct_stayed))
-
-pr.indicators <- prcomp(x = selected_10_no_y[,], scale=TRUE, center=TRUE)
-
-biplot(pr.indicators, col = c("white", "black"))
+write_csv(county_embeddedness, "~/ari_social_media/data/final/county_embeddedness_normalized.csv")
 
 ```
