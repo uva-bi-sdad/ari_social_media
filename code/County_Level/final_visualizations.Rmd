@@ -8,13 +8,13 @@ library(readr)
 library(readxl)
 library(dplyr)
 library(tidyverse)
-```
+library(viridis)
+
 
 
 
 ```{r}
-embeddedness <- read_csv("~/ari_social_media/data/final/county_embeddedness.csv")
-colnames(embeddedness) <- c("county")
+embeddedness <- read_excel("~/ari_social_media/data/final/community_embeddedness.xlsx")
 
 counties <- map_data("county")
 
@@ -53,7 +53,7 @@ va_posts <- posts %>%
 
 va_map <- ggplot() +
   theme_void() +
-  geom_polygon(data = va_county, aes(x=long, y=lat, group = group, fill = embeddedness), size = 1) + 
+  geom_polygon(data = va_county, aes(x=long, y=lat, group = group, fill = embeddedness.embeddedness), size = 1) + 
   scale_fill_viridis(option = "magma", direction = -1)+
   geom_point(aes(lon, lat), color = "white", alpha = 0.8, data = va_posts)
 va_map
@@ -82,7 +82,7 @@ ok_map
 va_map
 ```
 
-## Mosiac
+## Mosaic
 
 You can also embed plots, for example:
 
@@ -106,7 +106,8 @@ library(viridis)
 library(treemap)
 
   
-  treemap(weights, index = c("cat", "name"), vSize = "percent")
+
+treemap(weights, index = c("cat", "name"), vSize = "percent")
 
 library(ggraph)
 
@@ -133,8 +134,33 @@ ggplot(data = weights) + geom_mosaic(aes(weight = as.numeric(percent), x= cat, f
 
 va_county <- c("Stafford County", "Spotsylvania County", "Hanover County", "King William County", "King and Queen County", "Essex County", "King George County", "Caroline County")
 
+
+library(reshape2)
+
+colnames(embeddedness)[colnames(embeddedness)=="indicators$county"] <- "county"
+va_bar_chart <- embeddedness %>%
+  filter(county %in% va_county)%>%
+  mutate("Percent drive to work" = .2715*scale(pct_commute_drive), "Commute time mean" = .2192*scale(commute_time_mean), "Median income" = -.4399*scale(median_income), "Income ratio" = -.1851*scale(income_ratio), "Air pollution" = .1279*scale(air_pollution), "Percent white" = .1552*scale(pct_white), "Segregation"= .1302*scale(segregation_white_non), "Population" = .2676*scale(population), "Percent rural" = .3267*scale(pct_rural), "Percent voted" = .1623*scale(pct_voted)) %>%
+  select(county, embeddedness, "Percent drive to work", "Commute time mean", "Median income", "Income ratio", "Air pollution", "Percent white", "Segregation", "Population", "Percent rural", "Percent voted")%>%
+  melt(id.vars = c("county", "embeddedness"))
+
+va_counties <- embeddedness %>%
+  filter(county %in% va_county)%>%
+  
+
+ggplot(va_bar_chart, aes(x=variable, y=value))+geom_bar()
+
+va_bar_chart$variable <- factor(va_bar_chart$variable, levels = c("Median income", "Income ratio", "Percent rural","Percent white", "Percent drive to work", "Commute time mean", "Population", "Air pollution",  "Segregation", "Percent voted"))
+
+ggplot() +
+  geom_bar(data=va_bar_chart, aes(x=county, y=value, fill=variable), stat="identity")+
+  geom_segment(aes(x=.5, xend =1.5, y = embeddedness, yend = 0), color = "white")+
+  scale_fill_viridis_d()
+
+
 va_bar_chart <- embeddedness %>%
   filter(`indicator$county` %in% va_county)
+
 
 ```
 
