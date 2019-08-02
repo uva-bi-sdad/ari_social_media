@@ -46,12 +46,14 @@ indicators_2 <- indicators %>%
 imputed <- mice(indicators_2, method = "pmm")
 complete_indicators <- complete(imputed)
 write_csv(complete_indicators, "~/ari_social_media/data/working/County_Level/county_level_indicators_w_imputation.csv")
+
+complete_indicators <- read_csv("~/ari_social_media/data/working/County_Level/county_level_indicators_w_imputation.csv")
+
+
 #take out county name
 complete_indicators_2 <- complete_indicators %>%
   dplyr::select(-c(county))
 ```
-
-
 
 ```{r}
 # #remove all variables that contribute to multicolinearity
@@ -69,7 +71,9 @@ library(car)
 complete_indicators_small <- complete_indicators_2 %>%
   dplyr::select(-c(pct_black, pct_native, pct_asian, pct_pacific_islander, pct_race_other, pct_commute_carpool, pct_commute_public, pct_commute_walk, pct_commute_other, pct_work_home, pct_private_health_ins, pct_public_health_ins, pct_attained_hs, pct_some_college, pct_associates, pct_bachelors, pct_grad_degree, pct_hs_or_higher, pct_college_or_higher, median_income_white, median_income_black, median_income_hispanic, pct_child_food_insecure, segregation_black_white, pct_registered, pct_children_poverty, pct_impoverished, pct_food_insecure, pct_fair_poor_health))
 
+
 mod <- lm(pct_stayed~., data = complete_indicators_small)
+
 
 car::vif(mod)
 ```
@@ -148,9 +152,28 @@ corrplot(selected_corr_plot,
 
 final_model <- lm(scale(pct_stayed)~scale(pct_commute_drive)+scale(commute_time_mean)+scale(median_income)+scale(income_ratio)+scale(air_pollution)+scale(pct_white)+scale(segregation_white_non)+scale(population)+scale(pct_rural)+scale(pct_voted), data = selected_10)
 
+
 plot(final_model, which=c(1,2))
 
 summary(final_model)
+
+```
+
+```{r}
+
+embeddedness_no_county <- selected_10 %>%
+  mutate(embeddedness = .2715*scale(pct_commute_drive)+.2192*scale(commute_time_mean)-.4399*scale(median_income)-.1851*scale(income_ratio)+.1279*scale(air_pollution)+.1552*scale(pct_white)+.1302*scale(segregation_white_non)+.2676*scale(population)+.3267*scale(pct_rural)+.1623*scale(pct_voted))
+
+county_embeddedness <- cbind(indicators$county, embeddedness_no_county)
+
+normalize <- function(x) {
+    return ((x - min(x)) / (max(x) - min(x)))
+  }
+
+county_embeddedness$embeddedness <- as.data.frame(lapply(county_embeddedness["embeddedness"], normalize))
+
+write_csv(county_embeddedness, "~/ari_social_media/data/final/county_embeddedness_normalized.csv")
+
 
 ```
 
