@@ -9,7 +9,7 @@ library(readxl)
 library(dplyr)
 library(tidyverse)
 library(viridis)
-```
+
 
 
 
@@ -82,7 +82,7 @@ ok_map
 va_map
 ```
 
-## Mosiac
+## Mosaic
 
 You can also embed plots, for example:
 
@@ -106,6 +106,7 @@ library(viridis)
 library(treemap)
 
   
+
 treemap(weights, index = c("cat", "name"), vSize = "percent")
 
 library(ggraph)
@@ -133,6 +134,7 @@ ggplot(data = weights) + geom_mosaic(aes(weight = as.numeric(percent), x= cat, f
 
 va_county <- c("Stafford County", "Spotsylvania County", "Hanover County", "King William County", "King and Queen County", "Essex County", "King George County", "Caroline County")
 
+
 library(reshape2)
 
 colnames(embeddedness)[colnames(embeddedness)=="indicators$county"] <- "county"
@@ -154,6 +156,10 @@ ggplot() +
   geom_bar(data=va_bar_chart, aes(x=county, y=value, fill=variable), stat="identity")+
   geom_segment(aes(x=.5, xend =1.5, y = embeddedness, yend = 0), color = "white")+
   scale_fill_viridis_d()
+
+
+va_bar_chart <- embeddedness %>%
+  filter(`indicator$county` %in% va_county)
 
 
 ```
