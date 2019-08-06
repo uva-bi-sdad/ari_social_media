@@ -6,9 +6,10 @@ library(ggplot2)
 library(dplyr)
 library(viridis)
 library(reshape2)
+library(readxl)
 
 setwd("~/ari_social_media/data/final")
-data <- read_csv("county_embeddedness.csv")
+data <- read_excel("community_embeddedness.xlsx")
 
 ###### Lollipop plot for Virginia #####
 # read in counties of interest
@@ -17,7 +18,8 @@ data_virginia <- data[c(17, 28, 42, 48, 49, 50, 85, 86),]
 # data_all_va <- data[1:133,]
 # total_va_population <- sum(data_all_va$population)
 # data_virginia$incomesmall <- (data_virginia$median_income / 1000)
-names(data_virginia)[1] <- "county"
+names(data_virginia)[2] <- "county"
+names(data_virginia)[14] <- "embeddedness"
 mean_va <- mean(data_virginia$embeddedness)
 
 #selecting variables of interest
@@ -81,19 +83,20 @@ ggplot(data_virginia2, aes(x=county, y=value)) +
   theme_light() +
   geom_hline(aes(yintercept=mean_va), colour="#232D4B", linetype="dotted", size = 1) +
   geom_hline(aes(yintercept=0), colour="#232D4B", size = 0.1) +
+  expand_limits(y = 1) +
   labs(title = "Embeddedness Scores for Counties of Interest in Virginia",
        subtitle = "(Dashed line indicates average for Virginia)") +
   labs(x = "County", y = "Embeddedness score") +
   theme(
     panel.grid = element_blank(),
     axis.ticks.y = element_blank(),
-    axis.text.x=element_text(size = 14, angle=40, hjust=1, color = c("#EB5F0C", rep("#232D4B", 7))),
-    plot.title = element_text(size = 18, hjust = 0.5, color = "#232D4B"),
-    plot.subtitle = element_text(size=14, hjust=0.5, color = "#232D4B"),
-    axis.title.x = element_text(color = "#232D4B"),
-    axis.title.y = element_text(color = "#232D4B")
-  ) + geom_text(data = filter(data_virginia2, value > 0), aes(x = county, y = value, label=round(value, 3)), vjust = -.5, color="#232D4B") +
-  geom_text(data = filter(data_virginia2, value < 0), aes(x = county, y = value, label=round(value, 3)), vjust = 1.5, color = c("#EB5F0C", rep("#232D4B", 4)))
+    axis.text.x=element_text(size = 22, angle=20, hjust=1, color = c("#EB5F0C", rep("#232D4B", 7))),
+    plot.title = element_text(size = 28, hjust = 0.5, color = "#232D4B"),
+    plot.subtitle = element_text(size=24, hjust=0.5, color = "#232D4B"),
+    axis.title.x = element_text(color = "#232D4B", size = 22),
+    axis.title.y = element_text(color = "#232D4B", size = 22)
+  ) + geom_text(data = filter(data_virginia2, value > 0), aes(x = county, y = value, label=round(value, 2)), vjust = -.5, size=12, color=c("#EB5F0C", rep("#232D4B", 7))) + 
+  scale_x_discrete(labels=c("Caroline County" = "Caroline", "Essex County" = "Essex", "Hanover County" = "Hanover", "King and Queen County" = "King and Queen", "King William County" = "King William", "King George County" = "King George", "Spotsylvania County" = "Spotsylvania", "Stafford County" = "Stafford"))
 
 
 
@@ -107,7 +110,8 @@ data_oklahoma <- data[c(141, 149, 150, 159, 171, 202, 204),]
 data_all_ok <- data[134:210,]
 #total_ok_population <- sum(data_all_ok$population)
 #data_oklahoma$incomesmall <- (data_oklahoma$median_income / 1000)
-names(data_oklahoma)[1] <- "county"
+names(data_oklahoma)[2] <- "county"
+names(data_oklahoma)[14] <- "embeddedness"
 mean_ok <- mean(data_oklahoma$embeddedness)
 
 data_oklahoma2 <- melt(data_oklahoma %>% select(county, embeddedness))
@@ -169,6 +173,7 @@ data_oklahoma2$county <- factor(data_oklahoma2$county, levels = c("Comanche Coun
 ggplot(data_oklahoma2, aes(x=county, y=value)) +
   geom_bar(fill = c("#EB5F0C", rep("#232D4B", 6)), stat="identity") +
   theme_light() +
+  expand_limits(y = 1) +
   geom_hline(aes(yintercept=mean_ok), colour="#232D4B", linetype="dotted", size = 1) +
   geom_hline(aes(yintercept=0), colour="#232D4B", size = 0.1) +
   labs(title = "Embeddedness Scores for Counties of Interest in Oklahoma",
@@ -177,10 +182,12 @@ ggplot(data_oklahoma2, aes(x=county, y=value)) +
   theme(
     panel.grid = element_blank(),
     axis.ticks.y = element_blank(),
-    axis.text.x=element_text(size = 14, angle=40, hjust=1, color = c("#EB5F0C", rep("#232D4B", 7))),
-    plot.title = element_text(size = 18, hjust = 0.5, color = "#232D4B"),
-    plot.subtitle = element_text(size=14, hjust=0.5, color = "#232D4B"),
-    axis.title.x = element_text(color = "#232D4B"),
-    axis.title.y = element_text(color = "#232D4B")
-  ) + geom_text(data = filter(data_oklahoma2, value > 0), aes(x = county, y = value, label=round(value, 3)), vjust = -.5, color="#232D4B") +
-  geom_text(data = filter(data_oklahoma2, value < 0), aes(x = county, y = value, label=round(value, 3)), vjust = 1.5, color = c("#EB5F0C", rep("#232D4B", 4)))
+    axis.text.x=element_text(size = 22, angle=20, hjust=1, color = c("#EB5F0C", rep("#232D4B", 6))),
+    plot.title = element_text(size = 28, hjust = 0.5, color = "#232D4B"),
+    plot.subtitle = element_text(size=24, hjust=0.5, color = "#232D4B"),
+    axis.title.x = element_text(color = "#232D4B", size = 22),
+    axis.title.y = element_text(color = "#232D4B", size = 22)
+  ) + geom_text(data = filter(data_oklahoma2, value > 0), aes(x = county, y = value, label=round(value, 2)), vjust = -.5, color = c("#232D4B", "#EB5F0C", rep("#232D4B", 5)), size = 12) +
+  scale_x_discrete(labels=c("Caddo County" = "Caddo", "Comanche County" = "Comanche", "Cotton County" = "Cotton", "Grady County" = "Grady", "Kiowa County" = "Kiowa", "Stephens County" = "Stephens", "Tillman County" = "Tillman"))
+
+
