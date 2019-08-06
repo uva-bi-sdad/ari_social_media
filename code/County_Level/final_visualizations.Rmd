@@ -9,10 +9,20 @@ library(readxl)
 library(dplyr)
 library(tidyverse)
 library(viridis)
+library(treemap)
 ```
 
+# Clean names function, run first!
+
 ```{r}
+#create funtion to clean different county names formats
+#same function as in data_loading.rmd
+
+#Virginia has both counties and independent cities
 va_city_county_overlap <- c("Charles City", "James City", "Franklin", "Richmond", "Roanoke")
+
+#some independent cities have the same name as nearby counties
+va_independent_cities <- c("Alexandria", "Bristol", "Buena Vista", "Charlottesville", "Chesapeake", "Colonial Heights", "Covington", "Danville", "Emporia", "Fairfax City", "Falls Church", "Franklin", "Fredericksburg", "Galax", "Hampton", "Harrisonburg", "Hopewell", "Lexington", "Lynchburg", "Manassas", "Manassas Park", "Martinsville", "Newport News", "Norfolk", "Norton", "Petersburg", "Poquoson", "Portsmouth", "Radford", "Richmond", "Roanoke", "Salem", "Staunton", "Suffolk", "Virginia Beach", "Waynesboro", "Williamsburg", "Winchester")
 
 clean_county_names <- function(county_level_data){
   county_level_data <- county_level_data %>%
@@ -24,27 +34,27 @@ clean_county_names <- function(county_level_data){
                                          ifelse(subregion %in% va_independent_cities, str_c(as.character(subregion), "City", sep = " "), str_c(as.character(subregion), "County", sep = " "))))))  
 }
 
-va_counties_of_interest <- c("Stafford County", "Spotsylvania County", "Hanover County", "King William County", "King and Queen County", "Essex County", "King George County", "Caroline County")
 
+#to specify counties of interest for Virginia and Oklahoma
+va_counties_of_interest <- c("Stafford County", "Spotsylvania County", "Hanover County", "King William County", "King and Queen County", "Essex County", "King George County", "Caroline County")
 ok_counties_of_interest <- c("Comanche County", "Caddo County", "Cotton County", "Grady County", "Kiowa County", "Stephens County", "Tillman County")
 ```
 
+
+## Map of embeddedness score by county for Virginia
+
 ```{r}
+#read in embeddedness data
 embeddedness <- read_excel("~/ari_social_media/data/final/community_embeddedness.xlsx")
 
+#join embeddedness information with shapefile information
 counties <- map_data("county")
-
-va_independent_cities <- c("Alexandria", "Bristol", "Buena Vista", "Charlottesville", "Chesapeake", "Colonial Heights", "Covington", "Danville", "Emporia", "Fairfax City", "Falls Church", "Franklin", "Fredericksburg", "Galax", "Hampton", "Harrisonburg", "Hopewell", "Lexington", "Lynchburg", "Manassas", "Manassas Park", "Martinsville", "Newport News", "Norfolk", "Norton", "Petersburg", "Poquoson", "Portsmouth", "Radford", "Richmond", "Roanoke", "Salem", "Staunton", "Suffolk", "Virginia Beach", "Waynesboro", "Williamsburg", "Winchester")
-
-
 va_county <- subset(counties, region == 'virginia')%>%
   clean_county_names()%>%
   full_join(embeddedness, by=c("subregion" = "indicators$county" ))
-```
 
-```{r}
+#read in posts and locations for Virginia
 posts <- read_excel("~/ari_social_media/data/working/County_Level/military-bases.xlsx")
-
 va_posts <- posts %>%
   mutate(lat = as.numeric(str_extract(`Geo Point`, ".+?(?=,)")),
          lon = as.numeric(str_extract(`Geo Point`, "[^,]+$"))) %>%
@@ -52,6 +62,7 @@ va_posts <- posts %>%
   select("COMPONENT", "Site Name", "lat", "lon")%>%
   filter(`Site Name` != "Fort Belvoir")
 
+#add posts that weren't in original data
 va_posts <- rbind(va_posts, 
       c("Army Active", "Fort Story", as.numeric(36.9232), as.numeric(-76.0174)),
       c("Army Active", "Fort Eustis", as.numeric(37.1623), as.numeric(-76.5875)),
@@ -59,158 +70,86 @@ va_posts <- rbind(va_posts,
 va_posts$lon <- as.numeric(va_posts$lon)
 va_posts$lat <- as.numeric(va_posts$lat)
 
+#filter counties of interest
 va_specific_counties <- va_county %>%
   filter(subregion %in% va_counties_of_interest)
 
+#create visualization
 va_map <- ggplot() +
   theme_void() +
+  #map state of virginia, with county embeddedness as fill color
   geom_polygon(data = va_county, aes(x=long, y=lat, group = group, fill = embeddedness.embeddedness), size = 1) + 
   scale_fill_viridis(option = "magma", direction = -1)+
+  #add points at post locations
   geom_point(aes(lon, lat), color = "white", alpha = 0.8, data = va_posts)+
+  #add borders around counties of interest
   geom_polygon(data = va_specific_counties, 
             aes(x=long, y=lat, group = group), color = "white", fill = NA)
 va_map
 ```
 
 
+## Map of embeddedness score by county for Oklahoma
+
 ```{r}
+#read in posts and locations for Oklahoma
 ok_posts <- posts %>%
   mutate(lat = as.numeric(str_extract(`Geo Point`, ".+?(?=,)")),
          lon = as.numeric(str_extract(`Geo Point`, "[^,]+$"))) %>%
   filter(COMPONENT == "Army Active", `State Terr` == "Oklahoma")%>%
   select("COMPONENT", "Site Name", "lat", "lon")
 
-
+#join embeddedness information with shapefile information
 ok_county <- subset(counties, region == 'oklahoma')%>%
   clean_county_names()%>%
   full_join(embeddedness, by=c("subregion" = "indicators$county" ))
 
+#filter counties of interest
 ok_specific_counties <- ok_county %>%
   filter(subregion %in% ok_counties_of_interest)
 
+#create visualization
 ok_map <- ggplot() +
   theme_void() +
+  #map state of oklahoma, with county embeddedness as fill color
   geom_polygon(data = ok_county, aes(x=long, y=lat, group = group, fill = embeddedness.embeddedness), size = 1) + 
   scale_fill_viridis(option = "magma", direction = -1)+
+  #add points at post locations
   geom_point(aes(lon, lat), color = "white", alpha = 0.8, data = ok_posts) +
+  #add borders around counties of interest
   geom_polygon(data = ok_specific_counties, 
             aes(x=long, y=lat, group = group), color = "white", fill = NA)
 ok_map
 
 ```
 
-## Mosiac
-
-You can also embed plots, for example:
+## Treemap of Factor Weights
 
 ```{r}
-cat <- c("income", "income", "rural", "rural", "rural", "commute", "urban", "urban", "urban", "voted")
-name <- c("median income", "income ratio", "percent rural", "percent white", "percent drive to work", "commute time mean", "population", "segregation", "air pollution", "percent voted")
-percent <- c(19.247, 8.099, 14.249, 6.790, 11.879, 9.590, 11.708, 5.697, 5.596, 7.101)
+#adapted code from https://www.r-graph-gallery.com/236-custom-your-treemap
 
-weights <- data.frame(cat, name, percent)
-weights$percent <- as.numeric(weights$percent)
-
-library(ggmosaic)
-ggplot(data = weights) + geom_mosaic(aes(weight = as.numeric(percent), x= cat, fill = name))+
-  scale_fill_manual(c= "")
-```
-
-
-```{r}
-library(viridis)
-
-library(treemap)
-
-  
-treemap(weights, index = c("cat", "name"), vSize = "percent")
-
-library(ggraph)
-
-vertices = data.frame(
-  name = unique(c(as.character(weights$cat), as.character(weights$name))) , 
-  value = runif(15)
-) 
-  
-library(igraph)
-
-mygraph <- graph_from_data_frame(weights, vertices=vertices)
-
-ggraph(weights, layout = 'dendrogram', circular = "false") + 
-  geom_edge_diagonal() +
-  geom_node_text(aes(label=name, filter=leaf, color=cat) , angle=90 , hjust=1, nudge_y=-0.1) +
-  geom_node_point(aes(filter=leaf, size=percent, color=cat) , alpha=0.6) +
-  ylim(-.6, NA) +
-  theme(legend.position="none")
-
-ggplot(data = weights) + geom_mosaic(aes(weight = as.numeric(percent), x= cat, fill = name))
-```
-
-```{r}
-
-viridis_col <- c(viridis::magma(n = 7))
+#color palette used in plot
+#viridis_col <- c(viridis::magma(n = 7)) --used to figure out hex codes in palette
 viridis_col <- c("#2D1160FF", "#721F81FF", "#B63679FF", "#F1605DFF", "#FEAF77FF", "#FCFDBFFF")
-#treemap(weights, index = c("cat", "name"), vSize = "percent")
 
-
+#create plot
 treemap(weights, index=c("cat","name"),     
-        vSize="percent",# type="index",
-    fontsize.labels=c(0,12),                # size of labels. 
-    fontcolor.labels=c("white","white"),    # Color of labels
-    fontface.labels=c(2,1),                  # Font of labels: 1,2,3,4 for normal, bold, italic, bold-italic...
-    bg.labels=c("transparent"),              # Background color of labels
-    align.labels=list(
+        vSize="percent",
+        fontsize.labels=c(0,12),                 # size of labels. don't want to see name of category, so made text size 0
+        fontcolor.labels=c("white","white"),     # Color of labels
+        fontface.labels=c(2,1),                  # Font of labels: 1,2,3,4 for normal, bold, italic, bold-italic...
+        bg.labels=c("transparent"),              # Background color of labels
+        align.labels=list(
         c("center", "center"), 
         c("center", "center")
-        ),                                   # Where to place labels in the rectangle?
-    overlap.labels=0.5,                      # number between 0 and 1 that determines the tolerance of the overlap between labels.
-    inflate.labels=F,                        # If true, labels are bigger when rectangle is bigger.
-    palette = viridis_col,                        # Select your color palette from the RColorBrewer presets or make your own.
-    title="Weights of indicators for Community Embeddedness Index",                      # Customize your title
-    fontsize.title=12                       # Size of the title
+        ),                                       # Where to place labels in the rectangle?
+        overlap.labels=0.5,                      # determines the tolerance of the overlap between labels (between 0 and 1)
+        inflate.labels=F,                        # If true, labels are bigger when rectangle is bigger.
+        palette = viridis_col,                   # Select your color palette from the RColorBrewer presets or make your own.
+        title="Weights of indicators for Community Embeddedness Index",                      # Customize your title
+        fontsize.title=12                        # Size of the title
 )
-
-treeplot
-
 ```
 
-```{r}
-library(reshape2)
-
-colnames(embeddedness)[colnames(embeddedness)=="indicators$county"] <- "county"
-va_bar_chart <- embeddedness %>%
-  filter(county %in% va_counties_of_interest)
-
-
-
-```
-
-```{r}
-va_bar_chart <- embeddedness %>%
-  filter(county %in% va_county)%>%
-  mutate("Percent drive to work" = .2715*scale(pct_commute_drive), "Commute time mean" = .2192*scale(commute_time_mean), "Median income" = -.4399*scale(median_income), "Income ratio" = -.1851*scale(income_ratio), "Air pollution" = .1279*scale(air_pollution), "Percent white" = .1552*scale(pct_white), "Segregation"= .1302*scale(segregation_white_non), "Population" = .2676*scale(population), "Percent rural" = .3267*scale(pct_rural), "Percent voted" = .1623*scale(pct_voted)) %>%
-  select(county, embeddedness, "Percent drive to work", "Commute time mean", "Median income", "Income ratio", "Air pollution", "Percent white", "Segregation", "Population", "Percent rural", "Percent voted")%>%
-  melt(id.vars = c("county", "embeddedness"))
-
-va_counties <- embeddedness %>%
-  filter(county %in% va_county)
-  
-ggplot() +
-  geom_bar(data=va_counties, aes(x=county, y=embeddedness))
-```
-
-
-```{r}
-ggplot(va_bar_chart, aes(x=variable, y=value))+geom_bar()
-
-va_bar_chart$variable <- factor(va_bar_chart$variable, levels = c("Median income", "Income ratio", "Percent rural","Percent white", "Percent drive to work", "Commute time mean", "Population", "Air pollution",  "Segregation", "Percent voted"))
-
-ggplot() +
-  geom_bar(data=va_bar_chart, aes(x=county, y=value, fill=variable), stat="identity")+
-  geom_segment(aes(x=.5, xend =1.5, y = embeddedness, yend = 0), color = "white")+
-  scale_fill_viridis_d()
-
-
-```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

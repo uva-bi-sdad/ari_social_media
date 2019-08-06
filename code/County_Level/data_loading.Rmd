@@ -9,9 +9,9 @@ library(readxl)
 library(tidyverse)
 library(reshape2)
 library(skimr)
-
 ```
 
+# All data loading for county-level indicators. Need to run in order!
 
 ```{r}
 #create funtion to clean different county names formats
