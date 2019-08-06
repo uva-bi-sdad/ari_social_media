@@ -116,17 +116,14 @@ summary(mod2)
 
 
 ```{r}
-summary(lm(pct_stayed~pct_commute_drive+commute_time_mean+median_income+income_ratio+air_pollution+pct_white+segregation_white_non+population+pct_rural+pct_voted, data = complete_indicators_small))
-
-selected_corr_plot <- round(cor(selected_indicators_best, use = "pair"), 2)
-
-corrplot(selected_corr_plot,
-         tl.col="black", tl.cex = 0.7, tl.srt = 45)
+#final model
 
 final_model <- lm(scale(pct_stayed)~scale(pct_commute_drive)+scale(commute_time_mean)+scale(median_income)+scale(income_ratio)+scale(air_pollution)+scale(pct_white)+scale(segregation_white_non)+scale(population)+scale(pct_rural)+scale(pct_voted), data = selected_indicators_best)
 
+#check linearity of model
 plot(final_model, which=c(1,2))
 
+#look at results
 summary(final_model)
 
 ```
