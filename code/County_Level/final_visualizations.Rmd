@@ -99,10 +99,12 @@ ok_posts <- posts %>%
   filter(COMPONENT == "Army Active", `State Terr` == "Oklahoma")%>%
   select("COMPONENT", "Site Name", "lat", "lon")
 
+
 #join embeddedness information with shapefile information
 ok_county <- subset(counties, region == 'oklahoma')%>%
   clean_county_names()%>%
   full_join(embeddedness, by=c("subregion" = "indicators$county" ))
+
 
 #filter counties of interest
 ok_specific_counties <- ok_county %>%
@@ -150,6 +152,5 @@ treemap(weights, index=c("cat","name"),
         fontsize.title=12                        # Size of the title
 )
 ```
-
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

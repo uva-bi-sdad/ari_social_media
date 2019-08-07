@@ -26,7 +26,7 @@ plot_missing(indicators)
 #use correlation matrix to explore which variables are missing at random
 #because whether or not water violations data is missing is highly correlated with a number of variables, we've decided to remove it
 missing_indicators <- indicators %>%
-  dplyr::select(-c(county, pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person))%>%
+  dplyr::select(-c(county, pct_lib_program_atten, lib_visit_rate, pct_lib_patrons, lib_hours_per_person, water_violations))%>%
   mutate(missing_hispanic_income = ifelse(is.na(median_income_hispanic), 1, 0),
          missing_income_black = ifelse(is.na(median_income_black), 1, 0),
          missing_bw_segregation = ifelse(is.na(segregation_black_white), 1, 0),
@@ -67,6 +67,25 @@ complete_indicators_2 <- complete_indicators %>%
   dplyr::select(-c(county))
 ```
 
+```{r}
+library(glmnet)
+# Find the best lambda using cross-validation
+set.seed(123) 
+
+cv.lasso <- cv.glmnet(model.matrix(pct_stayed~., complete_indicators_small)[,-1], complete_indicators_small$pct_stayed, alpha = 1, family = "gaussian")
+# Fit the final model on the training data
+model <- glmnet(model.matrix(pct_stayed~., complete_indicators_small)[,-1], complete_indicators_small$pct_stayed, alpha = 1, family = "gaussian",
+                lambda = cv.lasso$lambda.min)
+# Display regression coefficients
+coef(model)
+coef(cv.lasso, cv.lasso$lambda.1se)
+
+selected_indicators_lasso <- complete_indicators_small %>%
+  dplyr::select(population, pct_commute_drive, median_income, pct_owner_occupied_homes, pct_enrolled_prek, social_assoc_rate, segregation_white_non, segregation_white_non, pct_rural, pct_stayed)
+
+mod <- lm(pct_stayed~., data = selected_indicators_lasso)
+summary(mod)
+```
 
 ```{r}
 library(car)
@@ -74,6 +93,7 @@ library(car)
 complete_indicators_small <- complete_indicators_2 %>%
   dplyr::select(-c(pct_black, pct_native, pct_asian, pct_pacific_islander, pct_race_other, pct_commute_carpool, pct_commute_public, pct_commute_walk, pct_commute_other, pct_work_home, pct_private_health_ins, pct_public_health_ins, pct_attained_hs, pct_some_college, pct_associates, pct_bachelors, pct_grad_degree, pct_hs_or_higher, pct_college_or_higher, median_income_white, median_income_black, median_income_hispanic, pct_child_food_insecure, segregation_black_white, pct_registered, pct_children_poverty, pct_impoverished, pct_food_insecure, pct_fair_poor_health))
 
+models <- regsubsets(pct_stayed ~., data = complete_indicators_small, nvmax = 10, nbest=1)
 
 #check variance inflation factors--highest are ~6 which isn't preferable, but we deemed acceptable in this case
 mod <- lm(pct_stayed~., data = complete_indicators_small)
@@ -112,8 +132,28 @@ selected_indicators_best <- complete_indicators_small %>%
 
 mod2 <- lm(pct_stayed~., data = selected_indicators_best)
 summary(mod2)
+
 ```
 
+```{r}
+summary(lm(pct_stayed~pct_commute_drive+commute_time_mean+median_income+income_ratio+air_pollution+pct_white+segregation_white_non+population+pct_rural+pct_voted, data = complete_indicators_small))
+
+selected_10 <- complete_indicators_small %>%
+  dplyr::select(population, pct_white, pct_commute_drive, commute_time_mean, median_income, income_ratio, air_pollution, segregation_white_non, pct_rural, pct_voted, pct_stayed)
+
+selected_corr_plot <- round(cor(selected_10, use = "pair"), 2)
+
+corrplot(selected_corr_plot,
+         tl.col="black", tl.cex = 0.7, tl.srt = 45)
+
+final_model <- lm(scale(pct_stayed)~scale(pct_commute_drive)+scale(commute_time_mean)+scale(median_income)+scale(income_ratio)+scale(air_pollution)+scale(pct_white)+scale(segregation_white_non)+scale(population)+scale(pct_rural)+scale(pct_voted), data = selected_10)
+
+
+plot(final_model, which=c(1,2))
+
+summary(final_model)
+
+```
 
 ```{r}
 #final model
@@ -144,4 +184,15 @@ county_embeddedness$embeddedness <- as.data.frame(lapply(county_embeddedness["em
 
 #final data with embeddedness index by county
 write_csv(county_embeddedness, "~/ari_social_media/data/final/county_embeddedness_normalized.csv")
+```
+
+
+```{r}
+selected_10_no_y <- selected_10 %>%
+  dplyr::select(-c(pct_stayed))
+
+pr.indicators <- prcomp(x = selected_10_no_y[,], scale=TRUE, center=TRUE)
+
+biplot(pr.indicators, col = c("white", "black"))
+
 ```
