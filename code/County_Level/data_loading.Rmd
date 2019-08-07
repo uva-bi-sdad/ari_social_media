@@ -38,7 +38,7 @@ clean_county_names <- function(county_level_data, county){
 ```
 
 
-## ACS Data
+## American Community Survey Data
 Explanation of factors:
 
 fips = FIPS Code
@@ -119,12 +119,9 @@ ACS_economic <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level
   mutate(county = str_extract(`GEO.display-label`, ".+?(?=, )"),
          state = str_extract(`GEO.display-label`, "[^, ]+$")) %>%
   select(county, state, HC03_VC28, HC03_VC29, HC03_VC30, HC03_VC31, HC03_VC32, HC03_VC33, HC01_VC36, 
-         #HC03_VC75, HC03_VC76, HC03_VC77, HC03_VC78, HC03_VC79, HC03_VC80, HC03_VC81, HC03_VC82, HC03_VC83, HC03_VC84, 
          HC01_VC85, HC03_VC131, HC03_VC132, HC03_VC133, HC03_VC134, HC03_VC161)
 
-names(ACS_economic) <- c("county", "state", "pct_commute_drive", "pct_commute_carpool", "pct_commute_public", "pct_commute_walk", "pct_commute_other", "pct_work_home", "commute_time_mean",
-#"pct_income_under_10k", "pct_income_10k_15k", "pct_income_15k_25k", "pct_income_25k_35k", "pct_income_35k_50k", "pct_income_50k_75k", "pct_income_75k_100k", "pct_income_100k_150k", "pct_income_150k_200k", "pct_income_over_200k", 
-                         "median_income", "pct_health_ins", "pct_private_health_ins", "pct_public_health_ins", "pct_no_health_ins", "pct_impoverished")
+names(ACS_economic) <- c("county", "state", "pct_commute_drive", "pct_commute_carpool", "pct_commute_public", "pct_commute_walk", "pct_commute_other", "pct_work_home", "commute_time_mean", "median_income", "pct_health_ins", "pct_private_health_ins", "pct_public_health_ins", "pct_no_health_ins", "pct_impoverished")
 
 
 #Read in American Community Survey Demographic and Housing Characteristics for 2017 dataset
@@ -134,8 +131,7 @@ ACS_demographic <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Le
   select(county, state, HC01_VC03, HC01_VC09, HC01_VC10, HC01_VC11, HC01_VC12, HC01_VC13, HC03_VC83, HC03_VC84, HC03_VC85, HC03_VC86,
          HC03_VC87, HC03_VC88, HC03_VC93)
 
-names(ACS_demographic) <- c("county", "state", "population", "pop_under_5", "pop_5_9", "pop_10_14", "pop_15_19", "pop_20_24", "pct_white",
-                            "pct_black", "pct_native", "pct_asian", "pct_pacific_islander", "pct_race_other", "pct_hispanic_latinx")
+names(ACS_demographic) <- c("county", "state", "population", "pop_under_5", "pop_5_9", "pop_10_14", "pop_15_19", "pop_20_24", "pct_white", "pct_black", "pct_native", "pct_asian", "pct_pacific_islander", "pct_race_other", "pct_hispanic_latinx")
 
 
 #merge all seperate ACS datasets with factors we want 
@@ -164,6 +160,8 @@ fips = FIPS code
 pct_fair_poor_health = percent of adults that report fair or poor health (as opposed to good or excellent)
 teen_birth_rate = teen births/females ages 15-19 * 100,000
 pcp_ratio = ratio of primary care physicians to population
+preventable_hosp_rate = number of hospital stays for ambulatory-care sensitive conditions per 1,000 Medicare enrollees 
+pct_unemployed = percentage of population ages 16 and older unemployed but seeking work
 pct_children_poverty = percent of children (under 18) living in poverty
 income_ratio = ratio of household income at the 80th percentile to income at the 20th percentile
 social_assoc_rate = social associations / population * 100,000
@@ -260,20 +258,16 @@ ok_county_health_rankings <- county_health_ranked_measure_data %>%
 rm(county_health_additional_measure_data, county_health_ranked_measure_data, first_row, header)
 ```
 
-## Library Data (ended up not using)
+## Public Libraries Survey Data (ended up not using)
 
 Explanation of factors:
 county = county in which the headquarters of the administrative entity is physically located
-lib_lsa_population = Population of the Legal Service Area
-lib_hours_open = Total annual public service hours for all service outlets
-lib_circulation = total annual circulation transactions
-lib_kids_circulation = Total annual circulation (including renewals) of all children's materials in all formats to all users
+lib_lsa_population = population of the Legal Service Area
+lib_hours_open = total annual public service hours for all service outlets
+lib_yearly_visits = total yearly visits to all service outlets 
+lib_registered_users = total registered users at all service outlets
 lib_program = total library programs
-lib_kids_program = total children's programs
-lib_ya_program = total young adult programs
 lib_prog_atten = total audience at all library programs
-lib_kids_prog_atten = total audience at all children's programs
-lib_ya_prog_atten = total audience at all young adult programs
 
 ```{r}
 #read in library data 
@@ -319,11 +313,11 @@ ok_library <- va_ok_library %>%
 rm(library_data, va_ok_library, king_queen_lib, king_william_lib, stafford_lib)
 ```
 
-## Migration Data
+## American Community Survey Migration Data
 
 Explanation of Factors:
 
-pct_stayed = Total number of those who did not move or moved within county, divided by population
+pct_stayed = total number of those who did not move or moved within county, divided by population
 
 ```{r}
 #read Migration Data for Virginia
@@ -384,11 +378,12 @@ rm(first_row, header)
 ```
 
 
-## Kids Count Data
+## Annie E Casey Foundation Kids Count Data
 
 Explanation of factors:
 
-pct_child_no_ins = Percent of all children in county who do not have health insurance
+pct_child_no_ins = percent of all children in county who do not have health insurance
+pct_child_food_insecure =  estimated percent of all children experiencing food insecurity 
 child_abuse_rate = rate of child abuse per 1,000 children
 pct_foster_1-5 = percent of children ages 1 through 5 who are in foster care
 pct_foster_11-15 = percent of children ages 11 through 15 who are in foster care
@@ -443,7 +438,7 @@ rm(ok_child_ins, ok_child_food, ok_child_abuse, ok_foster)
 ```
 
 
-## Death data (ended up not using)
+## Virginia Department of Health/Oklahoma State Department of Heath OK2SHARE Data
 
 Explanation of factors:
 
@@ -472,7 +467,7 @@ ok_death <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/Dea
 names(ok_death) <- c("county", "death_rate")
 ```
 
-## Voting Information
+## Virginia Department of Elections/Oklahoma State Election Board Data
 
 Explanation of factors:
 
@@ -493,7 +488,7 @@ ok_voting <- read_csv("/home/jk9ra/ari_social_media/data/working/County_Level/go
   select(-c(county_name))
 ```
 
-## Fast food, churches, and liquor (ended up not using)
+## Google Maps Data (ended up not using)
 
 Explanation of factors:
 
