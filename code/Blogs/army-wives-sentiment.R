@@ -28,7 +28,7 @@ library(magrittr)
 library(dplyr)
 library(lexicon)
 
-setwd("~/ari_social_media/data/working/Blogs")
+setwd("~/ari_social_media/data/unused/Blogs")
 #read in data, remove all carriage returns from the "entry" column (body of blog text)
 data <- fromJSON("armywivesdata.json")
 data[,c("entry")]=stringr::str_replace_all(data[,c("entry")], "[\r\n]" , " ")
@@ -58,7 +58,7 @@ top200_words
 top100_words <- freq_terms(entries, 100, at.least=4, stopwords = c("didnt", "dont", "youre", "cant", "thats"))
 top100_words
 
-#create word cloud
+#create word cloud of top 200 words
 set.seed(1234)
 wordcloud(words = top200_words$WORD, freq = top200_words$FREQ, min.freq = 1,
           max.words=200, random.order=FALSE, rot.per=0.35, 
