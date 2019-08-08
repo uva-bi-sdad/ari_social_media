@@ -130,6 +130,12 @@ ok_map
 ```{r}
 #adapted code from https://www.r-graph-gallery.com/236-custom-your-treemap
 
+cat <- c("income", "income", "rural", "rural", "rural", "commute", "urban", "urban", "urban", "voted")
+name <- c("median income", "income ratio", "percent rural", "percent white", "percent drive to work", "commute time mean", "population", "segregation", "air pollution", "percent voted")
+percent <- c(19.247, 8.099, 14.249, 6.790, 11.879, 9.590, 11.708, 5.697, 5.596, 7.101)
+weights <- data.frame(cat, name, percent)
+weights$percent <- as.numeric(weights$percent)
+
 #color palette used in plot
 #viridis_col <- c(viridis::magma(n = 7)) --used to figure out hex codes in palette
 viridis_col <- c("#2D1160FF", "#721F81FF", "#B63679FF", "#F1605DFF", "#FEAF77FF", "#FCFDBFFF")
