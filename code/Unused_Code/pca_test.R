@@ -54,6 +54,8 @@
 # pca_whatever$eig
 # pca_whatever$eig
 
+complete_indicators <- read_csv("~/ari_social_media/data/working/County_Level/county_level_indicators_w_imputation.csv")
+
 complete_indicators_2 <- complete_indicators %>%
   select(-c(county))
 library(BBmisc)
